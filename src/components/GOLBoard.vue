@@ -15,6 +15,7 @@ let cells = ref([
  *   -> For each 16 bits, LSB for column index 0
  * Curent limit set to 16 rows, 16 columns
  **/
+
 let initId = ref(boardToInitId());
 function boardToInitId(): string {
   let rIds = cells.value.map((row) => {
@@ -147,7 +148,7 @@ function toggleCell(c:number, r:number) {
     <p>ID: <span class="font-bold">{{initId}}</span></p>
     <p>Step count: <span class="font-bold">{{stepCount}}</span></p>
     <p>Loop: <span class="font-bold">{{isLoop}}</span></p>
-    <button class="btn m-2" @click="randomize" :disabled="running">Random</button>
+    <button class="btn" @click="randomize" :disabled="running">Random</button>
     <div class="w-500px h-500px border-1 border-solid border-gray-500 dark:border-gray-50 m-auto p-0 grid"
       :class="`grid-cols-${maxRows} grid-rows-${maxRows}`">
       <template v-for="(row, r) in cells">
@@ -156,9 +157,9 @@ function toggleCell(c:number, r:number) {
         </template>
       </template>
     </div>
-    <button class="btn m-1" @click="step">Step</button>
-    <button class="btn m-1" v-if="!running" @click="run(true)">Run</button>
-    <button class="btn m-1 bg-red-500" v-else @click="run(false)">Stop</button>
-    <button class="btn m-1 bg-red-500" :disabled="running" @click="reset">Reset</button>
+    <button class="btn" @click="step">Step</button>
+    <button class="btn" v-if="!running" @click="run(true)">Run</button>
+    <button class="btn bg-red-500" v-else @click="run(false)">Stop</button>
+    <button class="btn bg-red-500" :disabled="running" @click="reset">Reset</button>
   </div>
 </template>
