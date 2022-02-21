@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "esModuleInterop": true,
+    "strict": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist"
+  }
+}
+

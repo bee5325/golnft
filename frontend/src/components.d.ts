@@ -13,6 +13,7 @@ declare module 'vue' {
     Footer: typeof import('./components/Footer.vue')['default']
     GOLBoard: typeof import('./components/GOLBoard.vue')['default']
     GOLCell: typeof import('./components/GOLCell.vue')['default']
+    Notification: typeof import('./components/Notification.vue')['default']
     README: typeof import('./components/README.md')['default']
   }
 }

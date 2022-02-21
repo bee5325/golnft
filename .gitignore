@@ -1,2 +1,5 @@
-node_modules
-tailwind.config.js
+**/node_modules
+**/tailwind.config.js
+
+**/.env
+**/dist
