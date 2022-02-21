@@ -1,3 +1,7 @@
+<script lang="ts">
+export default { name: 'Mint' };
+</script>
+
 <script setup lang="ts">
 import { useWallet } from "../composables/wallet";
 import { ethers } from "ethers";
@@ -72,6 +76,7 @@ function clearNotification() {
 
 // contract interaction
 let rows = ref(3);
+let initId = ref<string | null>(null);
 let contractAddress = ref("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512");
 let minting = ref(false);
 async function mint() {
@@ -79,19 +84,26 @@ async function mint() {
   minting.value = true;
 
   try {
+    // first get init state from server
     let { data: newBoard } = await axios.put("http://localhost:3000/board", {rows: rows.value, account: account.value});
-    console.log(newBoard.initState);
-    /* let token = new ethers.Contract( */
-    /*   contractAddress.value, */
-    /*   contractAbi, */
-    /*   signer.value */
-    /* ); */
-    /* let pay = await token.payToMint(3, { value: 100000000000000 }); */
-    /* let res = await pay.wait(); */
-    /* notification.value = { */
-    /*   msg: `Transaction confirmed!\nTransaction ID: ${res.transactionHash}`, */
-    /*   type: "info" */
-    /* }; */
+
+    // pay and mint on chain
+    let token = new ethers.Contract(
+      contractAddress.value,
+      contractAbi,
+      signer.value
+    );
+    let pay = await token.payToMint(3, { value: 100000000000000 });
+    let res = await pay.wait();
+    notification.value = {
+      msg: `Transaction confirmed!\nTransaction ID: ${res.transactionHash}`,
+      type: "info"
+    };
+
+    // display
+    let initStateRaw = newBoard.initState;
+    initStateRaw = initStateRaw.replace("0x", "");
+    initId.value = initStateRaw.padStart(rows.value*4, "0");
   } catch (err: any) {
     if (err.code) {
       switch (err.code) {
@@ -126,10 +138,14 @@ async function mint() {
     <p class="inline-block">Contract address</p><input class="font-bold mx-2" v-model="contractAddress" />
     <button v-if="account === ''" class="btn" @click="connect">Connect your wallet</button>
     <p v-else>Account <span class="font-bold">{{account}}</span></p>
-    <p>
-      <label>Number of rows</label>
-      <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
-    </p>
+    <label>Number of rows</label>
+    <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
     <button class="btn" :disabled="minting" @click="mint">Mint</button>
+    <p class="font-bold" v-if="initId !== null">{{initId}}</p>
+    <GOLBoard
+      v-if="initId !== null"
+      :initId="initId"
+      :max-rows="rows"
+    />
   </div>
 </template>

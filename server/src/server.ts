@@ -31,7 +31,6 @@ function randomize(maxRows: number) {
       const ALIVE_CHANCE = 0.2;
       return (Math.random() < ALIVE_CHANCE) ? rowTotal + (1 << rIdx) : rowTotal;
     }, 0);
-    console.log({row, total});
     return total.add(ethers.BigNumber.from(`0x${row.toString(16).padStart(4, "0")}${"".padStart(4 * idx, "0")}`));
   }, ethers.BigNumber.from("0"));
   return rows;

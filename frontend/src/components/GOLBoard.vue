@@ -1,13 +1,22 @@
 <script setup lang="ts">
-let maxRows = ref(6);
-let cells = ref([
-  [false, false, false, false, false, false], // 000000 (0)
-  [false, false, false, false, false, false], // 000000 (0)
-  [false, false, true, true, true, false],    // 011100 (0)
-  [false, true, true, true, false, false],    // 001110 (0)
-  [false, false, false, false, false, false], // 000000 (0)
-  [false, false, false, false, false, false], // 000000 (0)
-]);
+let props = defineProps({
+  maxRows: {
+    type: Number,
+    default: 6,
+  },
+  initId: {
+    type: String,
+    default: "000000000000000000000000",
+  },
+});
+
+let emit = defineEmits(["initIdChanged", "running"]);
+
+let cells = ref(initIdToBoard());
+watch([() => props.initId, () => props.maxRows], () => {
+  cells.value = initIdToBoard();
+});
+
 /**
  * init ID format:
  * Saved as hex string, interpreted as bytes
@@ -16,7 +25,6 @@ let cells = ref([
  * Curent limit set to 16 rows, 16 columns
  **/
 
-let initId = ref(boardToInitId());
 function boardToInitId(): string {
   let rIds = cells.value.map((row) => {
     return row.reduce((rtotal, cell, cIdx) => {
@@ -28,20 +36,20 @@ function boardToInitId(): string {
   return rIds.join("");
 }
 function initIdToBoard(): boolean[][] {
-  let emptyBoard = new Array(maxRows.value)
+  let emptyBoard = new Array(props.maxRows)
     .fill(0)
-    .map(() => new Array(maxRows.value).fill(false));
-  if (!initId) {
+    .map(() => new Array(props.maxRows).fill(false));
+  if (!props.initId) {
     return emptyBoard;
   }
-  let initIdSplit = initId.value.match(/.{1,4}/g);
+  let initIdSplit = props.initId.match(/.{1,4}/g);
   if (!initIdSplit) {
     return emptyBoard;
   }
 
   return initIdSplit.map((rIdStr) => {
     let rIdBin =  parseInt(rIdStr, 16).toString(2).padStart(16, "0");
-    return rIdBin.split("").map((cell) => cell === '1').reverse().slice(0, maxRows.value);
+    return rIdBin.split("").map((cell) => cell === '1').reverse().slice(0, props.maxRows);
   });
 }
 
@@ -51,7 +59,7 @@ function nextStep(col: number, row: number): boolean {
   for (let r = row-1; r <= row+1; r++) {
     for (let c = col-1; c <= col+1; c++) {
       // out of bound
-      if (c < 0 || r < 0 || c >= maxRows.value || r >= maxRows.value) {
+      if (c < 0 || r < 0 || c >= props.maxRows || r >= props.maxRows) {
         continue;
       }
       // self
@@ -78,8 +86,8 @@ function nextStep(col: number, row: number): boolean {
 function step(): boolean {
   let newCells = JSON.parse(JSON.stringify(cells.value));
   let changed = false;
-  for (let c = 0; c < maxRows.value; c++) {
-    for (let r = 0; r < maxRows.value; r++) {
+  for (let c = 0; c < props.maxRows; c++) {
+    for (let r = 0; r < props.maxRows; r++) {
       newCells[c][r] = nextStep(c, r);
       if (newCells[c][r] !== cells.value[c][r]) {
         changed = true;
@@ -93,8 +101,8 @@ function step(): boolean {
   return changed
 }
 
+// Board controls
 let stepCount = ref(0);
-let isLoop = ref<"No" | "Yes">("No");
 let running = ref(false);
 let runTimer: number | null  = null;
 function run(_run: boolean) {
@@ -115,20 +123,6 @@ function run(_run: boolean) {
   running.value = _run;
 }
 function reset() {
-  initId.value = initId.value.padEnd(maxRows.value*4, "0").slice(0, maxRows.value*4);
-  cells.value = initIdToBoard();
-  stepCount.value = 0;
-}
-
-function randomize() {
-  let rows = Array(maxRows.value).fill(0).map(() => {
-    let row = Array(maxRows.value).fill(0).reduce((rowTotal, _, rIdx) => {
-      const ALIVE_CHANCE = 0.2;
-      return (Math.random() < ALIVE_CHANCE) ? rowTotal + (1 << rIdx) : rowTotal;
-    }, 0);
-    return row.toString(16).padStart(4, "0");
-  });
-  initId.value = rows.join("");
   cells.value = initIdToBoard();
   stepCount.value = 0;
 }
@@ -137,20 +131,20 @@ function toggleCell(c:number, r:number) {
   if (!running.value) {
     cells.value[r][c] = !cells.value[r][c];
   }
-  initId.value = boardToInitId();
+  emit("initIdChanged", boardToInitId());
 }
+
+watch(running, () => {
+  emit("running", running.value);
+});
 </script>
 
 <template>
   <div>
-    <label>Number of rows</label>
-    <input type="number" v-model="maxRows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" @input="reset"/>
-    <p>ID: <span class="font-bold">{{initId}}</span></p>
-    <p>Step count: <span class="font-bold">{{stepCount}}</span></p>
-    <p>Loop: <span class="font-bold">{{isLoop}}</span></p>
-    <button class="btn" @click="randomize" :disabled="running">Random</button>
-    <div class="w-500px h-500px border-1 border-solid border-gray-500 dark:border-gray-50 m-auto p-0 grid"
-      :class="`grid-cols-${maxRows} grid-rows-${maxRows}`">
+    <div
+      class="w-500px h-500px border-1 border-solid border-gray-500 dark:border-gray-50 m-auto p-0 grid"
+      :class="`grid-cols-${maxRows} grid-rows-${maxRows}`"
+    >
       <template v-for="(row, r) in cells">
         <template v-for="(cell, c) in row">
           <GOLCell :col="c" :row="r" :val="cell" @click="toggleCell(c, r)"/>

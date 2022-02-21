@@ -75,7 +75,11 @@ export default defineConfig({
 
     // https://github.com/antfu/vite-plugin-windicss
     WindiCSS({
-      safelist: [markdownWrapperClasses, 'grid-cols-6', 'grid-rows-6'],
+      safelist: [
+        markdownWrapperClasses,
+        [...Array(14).keys()].map(i => `grid-cols-${i+3}`),
+        [...Array(14).keys()].map(i => `grid-rows-${i+3}`),
+      ],
     }),
 
     // https://github.com/antfu/vite-plugin-md
