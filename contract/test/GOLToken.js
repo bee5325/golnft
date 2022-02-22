@@ -1,10 +1,30 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
+let owner, addr1, addr2;
+// helper functions
+async function getSignature(rows, initState, address) {
+  const abiCoder = ethers.utils.defaultAbiCoder;
+
+  return await owner.signMessage(
+    ethers.utils.arrayify(
+      ethers.utils.keccak256(
+        abiCoder.encode(
+          ['uint', 'uint', 'address'],
+          [rows, initState, address]
+        )
+      )
+    )
+  )
+};
+
 describe("GOL Token", () => {
+  before(async () => {
+    [owner, addr1, addr2] = await ethers.getSigners();
+  });
+
   describe("deployment", () => {
     it("should assign the owner", async () => {
-      const [owner] = await ethers.getSigners();
       const Token = await ethers.getContractFactory("GOLToken");
       const hardhatToken = await Token.deploy();
 
@@ -13,22 +33,24 @@ describe("GOL Token", () => {
   });
 
   describe("Pay to mint", () => {
-    let owner;
-    let addr1;
+    const MIN_PAYMENT = Math.pow(10, 14); // 0.0001 ether
+    const ROWS = 5;
+    const INIT_STATE = "00000015000400060003";
+
     let hardhatToken;
-    const minPayment = Math.pow(10, 14); // 0.0001 ether
+    let SIGNATURE;
 
     beforeEach(async () => {
-      [owner, addr1] = await ethers.getSigners();
       const Token = await ethers.getContractFactory("GOLToken");
       hardhatToken = await Token.deploy();
+      SIGNATURE = await getSignature(ROWS, INIT_STATE, addr1.address);
     });
 
-    it("should reject if not paid enough", async () => {
+    it("should revert if not paid enough", async () => {
       await expect(
         hardhatToken
           .connect(addr1)
-          .payToMint(5, { value: minPayment - 1 }))
+          .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT - 1 }))
         .to.be.revertedWith("Please pay ETH to mint");
     });
 
@@ -36,20 +58,42 @@ describe("GOL Token", () => {
       await expect(
         await hardhatToken
           .connect(addr1)
-          .payToMint(5, { value: minPayment }))
-        .to.changeEtherBalance(addr1, -minPayment);
+          .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT }))
+        .to.changeEtherBalance(addr1, -MIN_PAYMENT);
 
       await expect(
         await hardhatToken
           .connect(addr1)
-          .payToMint(5, { value: minPayment }))
-        .to.changeEtherBalance(owner, minPayment);
+          .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT }))
+        .to.changeEtherBalance(owner, MIN_PAYMENT);
+    });
+
+    it.only("should revert if signature not verified", async () => {
+      const NON_SIGNATURE = SIGNATURE.replace("1", "2");
+      const INIT_STATE_2 = "000100010001";
+      const SIGNATURE_2 = await getSignature(3, INIT_STATE_2, addr2.address);
+
+      await expect(
+        hardhatToken
+          .connect(addr1)
+          .payToMint(ROWS, INIT_STATE, NON_SIGNATURE, { value: MIN_PAYMENT }))
+        .to.be.revertedWith("Signature not verified");
+
+      // should not revert
+      await hardhatToken
+        .connect(addr1)
+        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT });
+
+      // should not revert
+      await hardhatToken
+        .connect(addr2)
+        .payToMint(3, INIT_STATE_2, SIGNATURE_2, { value: MIN_PAYMENT });
     });
 
     it("should mint token to buyer", async () => {
       await hardhatToken
         .connect(addr1)
-        .payToMint(5, { value: minPayment });
+        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT });
 
       expect(await hardhatToken.balanceOf(addr1.address)).to.be.eq(1);
       expect(await hardhatToken.ownerOf(1)).to.be.eq(addr1.address);
@@ -57,38 +101,37 @@ describe("GOL Token", () => {
 
     it("should only allow minting between 3 and 16 rows", async () => {
       await expect(hardhatToken.connect(addr1)
-        .payToMint(2, { value: minPayment }))
+        .payToMint(2, INIT_STATE, await getSignature(2, INIT_STATE, addr1.address), { value: MIN_PAYMENT }))
         .to.be.revertedWith("Rows should be between 3 and 16");
 
       await expect(hardhatToken.connect(addr1)
-        .payToMint(17, { value: minPayment }))
+        .payToMint(17, INIT_STATE, await getSignature(2, INIT_STATE, addr1.address), { value: MIN_PAYMENT }))
         .to.be.revertedWith("Rows should be between 3 and 16");
     });
 
-    // it.only("should generate initial state with correct length", async () => {
-    //   for (let i=0; i<10; i++) {
-    //     let res = await hardhatToken.connect(addr1)
-    //       .payToMint(16, { value: minPayment });
-    //     console.log(await hardhatToken.connect(addr1).estimateGas.payToMint(16, { value: minPayment }));
-    //   }
+    it("should revert if init state already exists", async () => {
+      await hardhatToken.connect(addr1)
+        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT });
 
-    //   let minted = await hardhatToken.queryFilter(hardhatToken.filters.Minted());
-    //   let initialState = minted.map((m) => m.args.initialState.toHexString().padStart(62, " "));
-    //   // make sure it is in format of (b'00000000000xxxxx)*5 times = 80bits
-    //   // we can check by AND with inverse of 0x001F (0xFFE0) * 5 times and the result should be 0
-    //   console.log(initialState);
-    //   // expect(initialState | 0xFFE0FFE0FFE0FFE0FFE0).to.be.eq(0);
-    // });
+      // same init state should be reverted
+      await expect(hardhatToken.connect(addr1)
+        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT }))
+        .to.be.revertedWith("Init state already exists");
+    });
   });
 
   describe("update price", () => {
-    let addr1;
+    const ROWS = 5;
+    const INIT_STATE = "00000015000400060003";
+
     let hardhatToken;
+    let SIGNATURE;
 
     beforeEach(async () => {
-      [owner, addr1] = await ethers.getSigners();
       const Token = await ethers.getContractFactory("GOLToken");
       hardhatToken = await Token.deploy();
+
+      SIGNATURE = await getSignature(ROWS, INIT_STATE, addr1.address);
     });
 
     it("should reject call by non-owner", async () => {
@@ -106,13 +149,13 @@ describe("GOL Token", () => {
       await expect(
         hardhatToken
           .connect(addr1)
-          .payToMint(5, { value: 1 }))
+          .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: 1 }))
         .to.be.revertedWith("Please pay ETH to mint");
 
       // success
       await hardhatToken
         .connect(addr1)
-        .payToMint(5, { value: 2 });
+        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: 2 });
     });
   });
 });

@@ -1,5 +1,11 @@
+require("dotenv").config();
+
 task("faucet", "Sends ETH to an address")
-  .addPositionalParam("receiver", "The address that will receive them")
+  .addOptionalPositionalParam(
+    "receiver",
+    "The address that will receive the ETH",
+    process.env.PUBLIC_KEY
+  )
   .setAction(async ({ receiver }, { ethers }) => {
     if (network.name === "hardhat") {
       console.warn(

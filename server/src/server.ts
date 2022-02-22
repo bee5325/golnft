@@ -10,20 +10,51 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ethers
-let signer = new ethers.Wallet(process.env.PRIVATE_KEY!);
-let abiCoder = ethers.utils.defaultAbiCoder;
+let collections: Record<string, Array<string>> = {};
 
-app.put("/board", (req, res) => {
-  let {account, rows} = req.body;
+app.put("/board", async (req, res) => {
+  let { account, rows } = req.body;
   let initState = randomize(rows);
-  let signature = signer.signMessage(abiCoder.encode(['uint256', 'address'], [initState, account]));
-  res.send({ initState: initState.toHexString(), signature });
+  let signature = await getSignature(rows, initState, account);
+  collections[account] = collections[account]
+    ? [...collections[account], initState]
+    : [initState];
+  res.send({
+    initState: initState.toHexString().replace("0x", "").padStart(rows*4, "0"),
+    signature
+  });
+});
+
+app.get("/collections", (req, res) => {
+  // let { account } = req.body;
+  console.log(collections);
+  res.send(collections);
 });
 
 app.listen(port, () => {
   console.log(`Express is listening at http://localhost:${port}`);
 });
+
+/**
+ *
+ * helper functions
+ *
+ **/
+async function getSignature(rows: number, initState: ethers.BigNumber, address: string) {
+  let signer = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"); //process.env.PRIVATE_KEY!);
+  let abiCoder = ethers.utils.defaultAbiCoder;
+
+  return await signer.signMessage(
+    ethers.utils.arrayify(
+      ethers.utils.keccak256(
+        abiCoder.encode(
+          ['uint', 'uint', 'address'],
+          [rows, initState, address]
+        )
+      )
+    )
+  )
+};
 
 function randomize(maxRows: number) {
   let rows = Array(maxRows).fill(0).reduce((total, _, idx) => {
@@ -35,3 +66,4 @@ function randomize(maxRows: number) {
   }, ethers.BigNumber.from("0"));
   return rows;
 }
+

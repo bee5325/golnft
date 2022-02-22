@@ -27,6 +27,16 @@ const contractAbi = [
         "internalType": "uint256",
         "name": "rows",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "initState",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
       }
     ],
     "name": "payToMint",
@@ -77,7 +87,7 @@ function clearNotification() {
 // contract interaction
 let rows = ref(3);
 let initId = ref<string | null>(null);
-let contractAddress = ref("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512");
+let contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 let minting = ref(false);
 async function mint() {
   // register start of minting to disable duplication
@@ -85,15 +95,20 @@ async function mint() {
 
   try {
     // first get init state from server
-    let { data: newBoard } = await axios.put("http://localhost:3000/board", {rows: rows.value, account: account.value});
+    let { data: { initState, signature } } = await axios.put("http://localhost:3000/board", {rows: rows.value, account: account.value});
 
     // pay and mint on chain
     let token = new ethers.Contract(
-      contractAddress.value,
+      contractAddress,
       contractAbi,
       signer.value
     );
-    let pay = await token.payToMint(3, { value: 100000000000000 });
+    let pay = await token.payToMint(
+      rows.value,
+      ethers.BigNumber.from(`0x${initState}`),
+      signature,
+      { value: 100000000000000 }
+    );
     let res = await pay.wait();
     notification.value = {
       msg: `Transaction confirmed!\nTransaction ID: ${res.transactionHash}`,
@@ -101,9 +116,7 @@ async function mint() {
     };
 
     // display
-    let initStateRaw = newBoard.initState;
-    initStateRaw = initStateRaw.replace("0x", "");
-    initId.value = initStateRaw.padStart(rows.value*4, "0");
+    initId.value = initState;
   } catch (err: any) {
     if (err.code) {
       switch (err.code) {
@@ -124,7 +137,12 @@ async function mint() {
           };
           break;
         }
+        default:
+          console.log(err);
+          break;
       }
+    } else {
+      console.log(err);
     }
   }
 
@@ -135,17 +153,18 @@ async function mint() {
 <template>
   <div>
     <Notification :type="notification.type" :msg="notification.msg" @clearNotification="clearNotification" />
-    <p class="inline-block">Contract address</p><input class="font-bold mx-2" v-model="contractAddress" />
-    <button v-if="account === ''" class="btn" @click="connect">Connect your wallet</button>
-    <p v-else>Account <span class="font-bold">{{account}}</span></p>
-    <label>Number of rows</label>
-    <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
-    <button class="btn" :disabled="minting" @click="mint">Mint</button>
-    <p class="font-bold" v-if="initId !== null">{{initId}}</p>
-    <GOLBoard
-      v-if="initId !== null"
-      :initId="initId"
-      :max-rows="rows"
-    />
+    <button v-if="!account" class="btn" @click="connect">Connect your wallet</button>
+    <div v-else>
+      <p>Account <span class="font-bold">{{account}}</span></p>
+      <label>Number of rows</label>
+      <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
+      <button class="btn" :disabled="minting" @click="mint">Mint</button>
+      <p class="font-bold" v-if="initId !== null">{{initId}}</p>
+      <GOLBoard
+        v-if="initId !== null"
+        :initId="initId"
+        :max-rows="rows"
+      />
+    </div>
   </div>
 </template>
