@@ -141,6 +141,11 @@ async function mint() {
           console.log(err);
           break;
       }
+    } else if (err.response?.status === 400 && err.response?.data?.msg) {
+      notification.value = {
+        type: "error",
+        msg: err.response.data.msg,
+      };
     } else {
       console.log(err);
     }

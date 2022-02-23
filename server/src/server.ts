@@ -10,15 +10,41 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+let taken: Record<number, Set<string>> = {};
 let collections: Record<string, Array<string>> = {};
 
 app.put("/board", async (req, res) => {
   let { account, rows } = req.body;
+
+  // check if rows supported
+  if (rows < 3 || rows > 16) {
+    res.status(400).send({ msg: `Rows must be between 3 and 16` });
+    return;
+  }
+
+  // check if all taken
+  if (taken[rows] === undefined) {
+    taken[rows] = new Set();
+  }
+  const takenCount = taken[rows].size;
+  if (takenCount === Math.pow(2, rows*rows)) {
+    res.status(400).send({ msg: `All possibilities were already taken for ${rows} rows` });
+    return;
+  }
+
+  // get a non repeated init state
   let initState = randomize(rows);
+  while (taken[rows].has(initState)) {
+    initState = randomize(rows);
+  }
+  taken[rows].add(initState);
+
+  // calculate signature to make sure it comes from the server itself
   let signature = await getSignature(rows, initState, account);
   collections[account] = collections[account]
     ? [...collections[account], initState]
     : [initState];
+
   res.send({
     initState: initState.toHexString().replace("0x", "").padStart(rows*4, "0"),
     signature
