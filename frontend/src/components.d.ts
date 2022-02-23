@@ -8,6 +8,7 @@ declare module 'vue' {
     CarbonClose: typeof import('~icons/carbon/close')['default']
     CarbonDicomOverlay: typeof import('~icons/carbon/dicom-overlay')['default']
     CarbonMoon: typeof import('~icons/carbon/moon')['default']
+    CarbonPlay: typeof import('~icons/carbon/play')['default']
     CarbonSun: typeof import('~icons/carbon/sun')['default']
     Collections: typeof import('./components/Collections.vue')['default']
     Counter: typeof import('./components/Counter.vue')['default']

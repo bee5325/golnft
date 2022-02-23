@@ -3,15 +3,13 @@ import "dotenv/config";
 import express from 'express';
 import { ethers } from 'ethers';
 import cors from 'cors';
+import { Collection, Taken } from './database';
 
 const port = 3000;
 
 const app = express();
 app.use(express.json());
 app.use(cors());
-
-let taken: Record<number, Set<string>> = {};
-let collections: Record<string, Array<string>> = {};
 
 app.put("/board", async (req, res) => {
   let { account, rows } = req.body;
@@ -23,10 +21,9 @@ app.put("/board", async (req, res) => {
   }
 
   // check if all taken
-  if (taken[rows] === undefined) {
-    taken[rows] = new Set();
-  }
-  const takenCount = taken[rows].size;
+  let takenEntry = await Taken.findOne({ rows });
+  let taken: Array<string> = takenEntry ? takenEntry.initStates : [];
+  const takenCount = taken.length;
   if (takenCount === Math.pow(2, rows*rows)) {
     res.status(400).send({ msg: `All possibilities were already taken for ${rows} rows` });
     return;
@@ -35,27 +32,36 @@ app.put("/board", async (req, res) => {
   // get a non repeated init state
   let initState = randomize(rows);
   let initStateStr = bigNumToInitState(initState, rows);
-  while (taken[rows].has(initStateStr)) {
+  while (taken && taken.includes(initStateStr)) {
     initState = randomize(rows);
     initStateStr = bigNumToInitState(initState, rows);
   }
-  taken[rows].add(initStateStr);
+  taken.push(initStateStr);
+  await Taken.replaceOne(
+    { rows },
+    { rows, initStates: taken },
+    { upsert: true }
+  );
 
   // calculate signature to make sure it comes from the server itself
   let signature = await getSignature(rows, initState, account);
-  collections[account] = collections[account]
-    ? [...collections[account], initStateStr]
-    : [initStateStr];
-
+  let col = await Collection.findOne({ account });
+  let oldCol = col ? col.collections : [];
+  let newCol = {
+    account,
+    collections: [...oldCol, initStateStr]
+  };
+  await Collection.replaceOne({ account }, newCol, { upsert: true });
   res.send({ initState: initStateStr, signature });
 });
 
-app.get("/collections/:account", (req, res) => {
+app.get("/collections/:account", async (req, res) => {
   let { account } = req.params;
-  res.send(collections[account]);
+  let col = await Collection.findOne({ account });
+  res.send(col ? col.collections : []);
 });
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Express is listening at http://localhost:${port}`);
 });
 
