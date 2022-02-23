@@ -8,6 +8,10 @@ let props = defineProps({
     type: String,
     default: "000000000000000000000000",
   },
+  toggle: {
+    type: Boolean,
+    default: true,
+  }
 });
 
 let emit = defineEmits(["initIdChanged", "running"]);
@@ -128,6 +132,9 @@ function reset() {
 }
 
 function toggleCell(c:number, r:number) {
+  if (!props.toggle) {
+    return;
+  }
   if (!running.value) {
     cells.value[r][c] = !cells.value[r][c];
   }

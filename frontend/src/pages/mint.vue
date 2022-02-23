@@ -3,76 +3,17 @@ export default { name: 'Mint' };
 </script>
 
 <script setup lang="ts">
-import { useWallet } from "../composables/wallet";
+import { useContract } from "../composables/contract";
 import { ethers } from "ethers";
 import axios from "axios";
 
-const contractAbi = [
-  {
-    "inputs": [],
-    "name": "getPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "rows",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "initState",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "signature",
-        "type": "bytes"
-      }
-    ],
-    "name": "payToMint",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "tokenURI",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-];
+// takes care of the contract
+let { account, connect, price: _price, payToMint } = useContract();
 
-// takes care of the wallet
-let { account, signer, connect } = useWallet();
+let price = ref("0.0001");
+onActivated(async () => {
+  price.value = await _price.value;
+});
 
 // notification
 interface Notification {
@@ -86,8 +27,8 @@ function clearNotification() {
 
 // contract interaction
 let rows = ref(3);
+let generatedRows = ref(3);
 let initId = ref<string | null>(null);
-let contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 let minting = ref(false);
 async function mint() {
   // register start of minting to disable duplication
@@ -98,12 +39,7 @@ async function mint() {
     let { data: { initState, signature } } = await axios.put("http://localhost:3000/board", {rows: rows.value, account: account.value});
 
     // pay and mint on chain
-    let token = new ethers.Contract(
-      contractAddress,
-      contractAbi,
-      signer.value
-    );
-    let pay = await token.payToMint(
+    let pay = await payToMint(
       rows.value,
       ethers.BigNumber.from(`0x${initState}`),
       signature,
@@ -117,6 +53,7 @@ async function mint() {
 
     // display
     initId.value = initState;
+    generatedRows.value = rows.value;
   } catch (err: any) {
     if (err.code) {
       switch (err.code) {
@@ -163,12 +100,13 @@ async function mint() {
       <p>Account <span class="font-bold">{{account}}</span></p>
       <label>Number of rows</label>
       <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
-      <button class="btn" :disabled="minting" @click="mint">Mint</button>
+      <button class="btn" :disabled="minting" @click="mint">Mint for {{ price }} ETH</button>
       <p class="font-bold" v-if="initId !== null">{{initId}}</p>
       <GOLBoard
         v-if="initId !== null"
+        :toggle="false"
         :initId="initId"
-        :max-rows="rows"
+        :max-rows="generatedRows"
       />
     </div>
   </div>
