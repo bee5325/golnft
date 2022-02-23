@@ -106,12 +106,22 @@ export const useContract = () => {
       console.error(err);
     });
 
+  async function payToMint(rows: number, initState: string, signature: string) {
+    let pay = await contract.payToMint(
+      unref(rows),
+      ethers.BigNumber.from(`0x${unref(initState)}`),
+      signature,
+      { value: ethers.utils.parseEther(await price.value) }
+    );
+    return await pay.wait();
+  }
+
   let price = computed(async () => ethers.utils.formatEther(await contract.getPrice()));
 
   return {
     account: currentAccount,
     connect,
-    payToMint: contract.payToMint,
+    payToMint,
     price,
   };
 }

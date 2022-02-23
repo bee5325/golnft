@@ -4,7 +4,6 @@ export default { name: 'Mint' };
 
 <script setup lang="ts">
 import { useContract } from "../composables/contract";
-import { ethers } from "ethers";
 import axios from "axios";
 
 // takes care of the contract
@@ -27,7 +26,6 @@ function clearNotification() {
 
 // contract interaction
 let rows = ref(3);
-let generatedRows = ref(3);
 let initId = ref<string | null>(null);
 let minting = ref(false);
 async function mint() {
@@ -39,13 +37,7 @@ async function mint() {
     let { data: { initState, signature } } = await axios.put("http://localhost:3000/board", {rows: rows.value, account: account.value});
 
     // pay and mint on chain
-    let pay = await payToMint(
-      rows.value,
-      ethers.BigNumber.from(`0x${initState}`),
-      signature,
-      { value: 100000000000000 }
-    );
-    let res = await pay.wait();
+    let res = await payToMint(rows.value, initState, signature);
     notification.value = {
       msg: `Transaction confirmed!\nTransaction ID: ${res.transactionHash}`,
       type: "info"
@@ -53,7 +45,6 @@ async function mint() {
 
     // display
     initId.value = initState;
-    generatedRows.value = rows.value;
   } catch (err: any) {
     if (err.code) {
       switch (err.code) {
@@ -84,16 +75,30 @@ async function mint() {
         msg: err.response.data.msg,
       };
     } else {
-      console.log(err);
+      console.trace(err);
     }
   }
 
   minting.value = false;
 }
+
+// collections
+let collections = ref([]);
+watch([account, initId], async () => {
+  if (!account.value) {
+    return;
+  }
+
+  let col = (await axios.get(`http://localhost:3000/collections/${account.value}`)).data;
+  if (col) {
+    collections.value = col;
+  }
+});
 </script>
 
 <template>
   <div>
+    <h1 class="font-bold text-xl uppercase">Mint</h1>
     <Notification :type="notification.type" :msg="notification.msg" @clearNotification="clearNotification" />
     <button v-if="!account" class="btn" @click="connect">Connect your wallet</button>
     <div v-else>
@@ -106,8 +111,11 @@ async function mint() {
         v-if="initId !== null"
         :toggle="false"
         :initId="initId"
-        :max-rows="generatedRows"
+        :autorun="true"
       />
     </div>
+    <hr class="m-4">
+    <h1 class="font-bold text-xl uppercase mb-2">My collections ({{collections.length}})</h1>
+    <Collections :collections="collections" />
   </div>
 </template>

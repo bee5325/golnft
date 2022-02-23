@@ -25,12 +25,15 @@ function reset() {
 
 <template>
   <div>
-    <label>Number of rows</label>
-    <input type="number" v-model="maxRows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" @input="reset" />
-    <p>ID: <span class="font-bold">{{initId}}</span></p>
-    <p>Step count: <span class="font-bold">{{stepCount}}</span></p>
-    <p>Loop: <span class="font-bold">{{isLoop}}</span></p>
-    <button class="btn" @click="randomize" :disabled="running">Random</button>
+    <h1 class="font-bold text-xl uppercase">Explore</h1>
+    <div>
+      <label>Number of rows</label>
+      <input type="number" v-model="maxRows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" @input="reset" />
+      <p>ID: <span class="font-bold">{{initId}}</span></p>
+      <p>Step count: <span class="font-bold">{{stepCount}}</span></p>
+      <p>Loop: <span class="font-bold">{{isLoop}}</span></p>
+      <button class="btn" @click="randomize" :disabled="running">Random</button>
+    </div>
     <GOLBoard
       :initId="initId"
       :max-rows="maxRows"

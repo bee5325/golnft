@@ -34,27 +34,25 @@ app.put("/board", async (req, res) => {
 
   // get a non repeated init state
   let initState = randomize(rows);
-  while (taken[rows].has(initState)) {
+  let initStateStr = bigNumToInitState(initState, rows);
+  while (taken[rows].has(initStateStr)) {
     initState = randomize(rows);
+    initStateStr = bigNumToInitState(initState, rows);
   }
-  taken[rows].add(initState);
+  taken[rows].add(initStateStr);
 
   // calculate signature to make sure it comes from the server itself
   let signature = await getSignature(rows, initState, account);
   collections[account] = collections[account]
-    ? [...collections[account], initState]
-    : [initState];
+    ? [...collections[account], initStateStr]
+    : [initStateStr];
 
-  res.send({
-    initState: initState.toHexString().replace("0x", "").padStart(rows*4, "0"),
-    signature
-  });
+  res.send({ initState: initStateStr, signature });
 });
 
-app.get("/collections", (req, res) => {
-  // let { account } = req.body;
-  console.log(collections);
-  res.send(collections);
+app.get("/collections/:account", (req, res) => {
+  let { account } = req.params;
+  res.send(collections[account]);
 });
 
 app.listen(port, () => {
@@ -93,3 +91,6 @@ function randomize(maxRows: number) {
   return rows;
 }
 
+function bigNumToInitState(bigNum: ethers.BigNumber, maxRows: number): string {
+  return bigNum.toHexString().replace("0x", "").padStart(maxRows*4, "0");
+}

@@ -1,9 +1,5 @@
 <script setup lang="ts">
 let props = defineProps({
-  maxRows: {
-    type: Number,
-    default: 6,
-  },
   initId: {
     type: String,
     default: "000000000000000000000000",
@@ -11,13 +7,26 @@ let props = defineProps({
   toggle: {
     type: Boolean,
     default: true,
+  },
+  controls: {
+    type: Boolean,
+    default: true,
+  },
+  autorun: {
+    type: Boolean,
+    default: false,
+  },
+  small: {
+    type: Boolean,
+    default: false,
   }
 });
 
 let emit = defineEmits(["initIdChanged", "running"]);
 
+let maxRows = computed(() => props.initId.length / 4);
 let cells = ref(initIdToBoard());
-watch([() => props.initId, () => props.maxRows], () => {
+watch([() => props.initId, () => maxRows.value], () => {
   cells.value = initIdToBoard();
 });
 
@@ -40,9 +49,9 @@ function boardToInitId(): string {
   return rIds.join("");
 }
 function initIdToBoard(): boolean[][] {
-  let emptyBoard = new Array(props.maxRows)
+  let emptyBoard = new Array(maxRows.value)
     .fill(0)
-    .map(() => new Array(props.maxRows).fill(false));
+    .map(() => new Array(maxRows.value).fill(false));
   if (!props.initId) {
     return emptyBoard;
   }
@@ -53,7 +62,7 @@ function initIdToBoard(): boolean[][] {
 
   return initIdSplit.map((rIdStr) => {
     let rIdBin =  parseInt(rIdStr, 16).toString(2).padStart(16, "0");
-    return rIdBin.split("").map((cell) => cell === '1').reverse().slice(0, props.maxRows);
+    return rIdBin.split("").map((cell) => cell === '1').reverse().slice(0, maxRows.value);
   });
 }
 
@@ -63,7 +72,7 @@ function nextStep(col: number, row: number): boolean {
   for (let r = row-1; r <= row+1; r++) {
     for (let c = col-1; c <= col+1; c++) {
       // out of bound
-      if (c < 0 || r < 0 || c >= props.maxRows || r >= props.maxRows) {
+      if (c < 0 || r < 0 || c >= maxRows.value || r >= maxRows.value) {
         continue;
       }
       // self
@@ -90,8 +99,8 @@ function nextStep(col: number, row: number): boolean {
 function step(): boolean {
   let newCells = JSON.parse(JSON.stringify(cells.value));
   let changed = false;
-  for (let c = 0; c < props.maxRows; c++) {
-    for (let r = 0; r < props.maxRows; r++) {
+  for (let c = 0; c < maxRows.value; c++) {
+    for (let r = 0; r < maxRows.value; r++) {
       newCells[c][r] = nextStep(c, r);
       if (newCells[c][r] !== cells.value[c][r]) {
         changed = true;
@@ -144,13 +153,25 @@ function toggleCell(c:number, r:number) {
 watch(running, () => {
   emit("running", running.value);
 });
+
+// autorun
+onMounted(() => {
+  if (props.autorun) {
+    run(true);
+  }
+});
 </script>
 
 <template>
-  <div>
+  <div class="inline-block m-2 align-top">
     <div
       class="w-500px h-500px border-1 border-solid border-gray-500 dark:border-gray-50 m-auto p-0 grid"
-      :class="`grid-cols-${maxRows} grid-rows-${maxRows}`"
+      :class="[
+        `grid-cols-${maxRows}`,
+        `grid-rows-${maxRows}`,
+        {'w-100px h-100px': small},
+        {'border-2 border-green-500': stepCount === 0},
+      ]"
     >
       <template v-for="(row, r) in cells">
         <template v-for="(cell, c) in row">
@@ -158,9 +179,11 @@ watch(running, () => {
         </template>
       </template>
     </div>
-    <button class="btn" @click="step">Step</button>
-    <button class="btn" v-if="!running" @click="run(true)">Run</button>
-    <button class="btn bg-red-500" v-else @click="run(false)">Stop</button>
-    <button class="btn bg-red-500" :disabled="running" @click="reset">Reset</button>
+    <div v-if="controls">
+      <button class="btn" @click="step">Step</button>
+      <button class="btn" v-if="!running" @click="run(true)">Run</button>
+      <button class="btn bg-red-500" v-else @click="run(false)">Stop</button>
+      <button class="btn bg-red-500" :disabled="running" @click="reset">Reset</button>
+    </div>
   </div>
 </template>
