@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useContract } from "../composables/contract";
 import axios from "axios";
+import { config } from "../config";
 
 useHead({
   title: 'Mint',
@@ -29,7 +30,7 @@ let rows = ref(3);
 let mintedCount = ref(0);
 watchEffect(async () => {
   try {
-    let resp = await axios.get(`http://localhost:3000/minted/${rows.value}`);
+    let resp = await axios.get(`${config.SERVER_URL}/minted/${rows.value}`);
     mintedCount.value = resp.data.rows;
   } catch (err) {
     console.log(err);
@@ -37,7 +38,7 @@ watchEffect(async () => {
 });
 
 // contract interaction
-let initId = ref<string | null>(null);
+let initId = ref<string>("????????????");
 let minting = ref(false);
 let connecting = ref(false);
 
@@ -50,6 +51,12 @@ async function connectWallet() {
   }
 }
 
+watch(rows, () => {
+  if (initId.value.includes("?")) {
+    initId.value = "".padStart(rows.value*4, "?");
+  }
+});
+
 async function mint() {
   // register start of minting to disable duplication
   minting.value = true;
@@ -57,7 +64,7 @@ async function mint() {
   try {
     // first get init state from server
     let { data: { initState, signature } } = await axios.put(
-      "http://localhost:3000/board",
+      `${config.SERVER_URL}/board`,
       {rows: rows.value, account: account.value}
     );
 
@@ -124,7 +131,7 @@ watch([account, initId], async () => {
     return;
   }
 
-  let col = (await axios.get(`http://localhost:3000/collections/${account.value}`)).data;
+  let col = (await axios.get(`${config.SERVER_URL}/collections/${account.value}`)).data;
   if (col) {
     collections.value = col;
   }
@@ -138,15 +145,16 @@ watch([account, initId], async () => {
     <button v-if="!account" class="btn" :disabled="connecting" @click="connectWallet">Connect your wallet</button>
     <div v-else>
       <p>Account <span class="font-bold">{{account}}</span></p>
-      <label>Number of rows</label>
-      <div>
+      <div class="w-390px m-auto">
+        <label>Number of rows</label>
         <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
-        <span>(<span class="font-bold">{{mintedCount}}</span> of {{Math.pow(2,rows*rows)}} minted)</span>
       </div>
+      <p>(<span class="font-bold">{{mintedCount}}</span> of {{Math.pow(2,rows*rows)}} minted)</p>
       <button class="btn" :disabled="minting || price === '?'" @click="mint">Mint for {{ price }} ETH</button>
-      <p class="font-bold" v-if="initId !== null">{{initId}}</p>
+      <p class="font-bold">{{initId}}</p>
       <GOLBoard
-        v-if="initId !== null"
+        :width="500"
+        :height="500"
         :toggle="false"
         :initId="initId"
         :autorun="true"

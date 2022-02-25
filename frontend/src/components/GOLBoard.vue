@@ -19,6 +19,14 @@ let props = defineProps({
   small: {
     type: Boolean,
     default: false,
+  },
+  width: {
+    type: Number,
+    default: 0,
+  },
+  height: {
+    type: Number,
+    default: 0,
   }
 });
 
@@ -29,6 +37,7 @@ let cells = ref(initIdToBoard());
 watch([() => props.initId, () => maxRows.value], () => {
   reset();
 });
+let revealed = computed(() => !props.initId.includes("?"));
 
 /**
  * init ID format:
@@ -139,6 +148,14 @@ function loopDetected(): boolean {
 // animation in canvas
 let canvas = ref<HTMLCanvasElement | null>(null);
 let { width: canvasWidth, height: canvasHeight } = useElementSize(canvas);
+// allow parent override height and width
+if (props.width > 0) {
+  canvasWidth.value = props.width;
+}
+if (props.height > 0) {
+  canvasHeight.value = props.height;
+}
+
 watch([cells, canvasWidth, canvasHeight], () => {
   nextTick(() => {
     if (!canvas.value) {
@@ -166,6 +183,10 @@ watch([cells, canvasWidth, canvasHeight], () => {
           ctx.fillRect(c*width+padding, r*height+padding, width, height);
         }
       }
+    }
+    if (!revealed.value) {
+      ctx.fillStyle = "rgba(75, 85, 99, 0.5)";
+      ctx.fillRect(0, 0, canvasWidth.value, canvasHeight.value);
     }
   });
 });
@@ -251,10 +272,10 @@ onMounted(() => {
     >
     </canvas>
     <div v-if="controls">
-      <button class="btn" :disabled="running" @click="step">Step</button>
-      <button class="btn" v-if="!running" @click="run(true)">Run</button>
+      <button class="btn" :disabled="running || !revealed" @click="step">Step</button>
+      <button class="btn" v-if="!running" @click="run(true)" :disabled="!revealed">Run</button>
       <button class="btn bg-red-500" v-else @click="run(false)">Stop</button>
-      <button class="btn bg-red-500" :disabled="running" @click="reset">Reset</button>
+      <button class="btn bg-red-500" :disabled="running || !revealed" @click="reset">Reset</button>
     </div>
   </div>
 </template>
