@@ -67,11 +67,13 @@ async function genGIF(initState: string): Promise<{
     let { changed, newCells } = stepCells(cells);
 
     // check for step count and loop
-    if (loopDetected(cells, hare)) {  // sideeffect: hare will be updated
+    let hareChanged;
+    ({ cells: hare, changed: hareChanged } = advanceHare(hare));
+    if (hareChanged && loopDetected(cells, hare)) {
       // loop enough, stop generating gif
       if (loopCount++ >= gifLoopCount) {
         break;
-      } else if (loopCount === 0) {
+      } else if (loopCount === 1) {
         // start of loop, stop increment stepCount
         stepCount = step;
         loop = true;
@@ -205,12 +207,13 @@ async function uploadIPFS(filePath: string) {
   }
 }
 
-function loopDetected(turtle: boolean[][], hare: boolean[][]) {
+function advanceHare(hare: boolean[][]) {
   let stepOnce = stepCells(hare);
-  if (!stepOnce.changed) {
-    return false;
-  }
-  hare = stepCells(stepOnce.newCells).newCells; // sideeffect: hare updated
+  let newHare = stepCells(stepOnce.newCells);
+  return { cells: newHare.newCells, changed: newHare.changed }
+}
+
+function loopDetected(turtle: boolean[][], hare: boolean[][]) {
   return JSON.stringify(turtle) === JSON.stringify(hare);
 }
 
