@@ -44,7 +44,7 @@ watchEffect(() => {
         <input type="number" v-model="maxRows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" @input="reset" />
         <p>
           ID:
-          <input class="font-bold break-all" v-model="initId" />
+          <input class="font-bold break-all border-gray-300 border-1 border-solid w-3/4 px-2 py-1 m-2" v-model="initId" />
         </p>
         <p>Step count: <span class="font-bold">{{stepCount}}</span></p>
         <p>Loop: <span class="font-bold">{{isLoop}}</span></p>

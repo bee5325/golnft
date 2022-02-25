@@ -26,7 +26,6 @@ let emit = defineEmits(["initIdChanged", "running", "stepCountChanged", "loopCha
 
 let maxRows = computed(() => props.initId.length / 4);
 let cells = ref(initIdToBoard());
-let hare = ref(initIdToBoard()); // used for loop detection
 watch([() => props.initId, () => maxRows.value], () => {
   reset();
 });
@@ -104,9 +103,7 @@ function step(): boolean {
   }
   cells.value = newCells.newCells;
 
-  let steppedOnce = _step(hare.value).newCells;
-  hare.value = _step(steppedOnce).newCells;
-  if (loopDetected(cells.value, hare.value)) {
+  if (loopDetected()) {
     loop.value = true;
   }
   return newCells.changed;
@@ -129,8 +126,14 @@ function _step(cells: boolean[][]): {
   return { changed, newCells };
 }
 
-function loopDetected(turtle: boolean[][], hare: boolean[][]): boolean {
-  return (JSON.stringify(turtle) === JSON.stringify(hare));
+let hare = ref(initIdToBoard()); // used for loop detection
+function loopDetected(): boolean {
+  let steppedOnce = _step(hare.value);
+  if (!steppedOnce.changed) {
+    return false;
+  }
+  hare.value = _step(steppedOnce.newCells).newCells;
+  return (JSON.stringify(cells.value) === JSON.stringify(hare.value));
 }
 
 // animation in canvas

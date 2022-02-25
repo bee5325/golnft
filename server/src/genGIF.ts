@@ -49,7 +49,7 @@ async function genGIF(initState: string): Promise<{
   // max step limit 200
   console.log("Start generate gif");
   for (let step=0; step<200; step++) {
-
+    // draw on canvas
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     ctx.fillStyle = color;
@@ -61,12 +61,13 @@ async function genGIF(initState: string): Promise<{
         }
       }
     }
-
     encoder.addFrame(ctx);
+
+    // update cells state
     let { changed, newCells } = stepCells(cells);
 
-    hare = advanceHare(hare);
-    if (loopDetected(cells, hare)) {
+    // check for step count and loop
+    if (loopDetected(cells, hare)) {  // sideeffect: hare will be updated
       // loop enough, stop generating gif
       if (loopCount++ >= gifLoopCount) {
         break;
@@ -204,13 +205,12 @@ async function uploadIPFS(filePath: string) {
   }
 }
 
-function advanceHare(hare: boolean[][]) {
-  let stepOnce = stepCells(hare).newCells;
-  let stepTwice = stepCells(stepOnce).newCells;
-  return stepTwice;
-}
-
 function loopDetected(turtle: boolean[][], hare: boolean[][]) {
+  let stepOnce = stepCells(hare);
+  if (!stepOnce.changed) {
+    return false;
+  }
+  hare = stepCells(stepOnce.newCells).newCells; // sideeffect: hare updated
   return JSON.stringify(turtle) === JSON.stringify(hare);
 }
 

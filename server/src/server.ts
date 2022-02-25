@@ -82,7 +82,6 @@ app.get("/collections/:account", async (req, res) => {
 app.get("/minted/:row", async (req, res) => {
   let { row } = req.params;
   let rows = await Minted.count({ rows: row }); 
-  console.log(rows);
   res.send({ rows });
 });
 
