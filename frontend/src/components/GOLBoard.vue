@@ -22,12 +22,13 @@ let props = defineProps({
   }
 });
 
-let emit = defineEmits(["initIdChanged", "running"]);
+let emit = defineEmits(["initIdChanged", "running", "stepCountChanged", "loopChanged"]);
 
 let maxRows = computed(() => props.initId.length / 4);
 let cells = ref(initIdToBoard());
+let hare = ref(initIdToBoard()); // used for loop detection
 watch([() => props.initId, () => maxRows.value], () => {
-  cells.value = initIdToBoard();
+  reset();
 });
 
 /**
@@ -66,7 +67,7 @@ function initIdToBoard(): boolean[][] {
   });
 }
 
-function nextStep(col: number, row: number): boolean {
+function nextStep(cells: boolean[][], col: number, row: number): boolean {
   let neighbours = [];
 
   for (let r = row-1; r <= row+1; r++) {
@@ -84,8 +85,8 @@ function nextStep(col: number, row: number): boolean {
     }
   }
 
-  let alive = cells.value[col][row];
-  let aliveNeighbours = neighbours.filter(([c, r]) => cells.value[c][r]).length;
+  let alive = cells[col][row];
+  let aliveNeighbours = neighbours.filter(([c, r]) => cells[c][r]).length;
 
   if (alive && (aliveNeighbours == 2 || aliveNeighbours == 3)) {
     return true;
@@ -97,36 +98,95 @@ function nextStep(col: number, row: number): boolean {
 }
 
 function step(): boolean {
-  let newCells = JSON.parse(JSON.stringify(cells.value));
+  let newCells = _step(cells.value);
+  if (newCells.changed && !loop.value) {
+    stepCount.value++;
+  }
+  cells.value = newCells.newCells;
+
+  let steppedOnce = _step(hare.value).newCells;
+  hare.value = _step(steppedOnce).newCells;
+  if (loopDetected(cells.value, hare.value)) {
+    loop.value = true;
+  }
+  return newCells.changed;
+}
+
+function _step(cells: boolean[][]): {
+  changed: boolean,
+  newCells: boolean[][]
+} {
+  let newCells = JSON.parse(JSON.stringify(cells));
   let changed = false;
   for (let c = 0; c < maxRows.value; c++) {
     for (let r = 0; r < maxRows.value; r++) {
-      newCells[c][r] = nextStep(c, r);
-      if (newCells[c][r] !== cells.value[c][r]) {
+      newCells[c][r] = nextStep(cells, c, r);
+      if (newCells[c][r] !== cells[c][r]) {
         changed = true;
       }
     }
   }
-  cells.value = newCells;
-  if (changed) {
-    stepCount.value++;
-  }
-  return changed
+  return { changed, newCells };
 }
+
+function loopDetected(turtle: boolean[][], hare: boolean[][]): boolean {
+  return (JSON.stringify(turtle) === JSON.stringify(hare));
+}
+
+// animation in canvas
+let canvas = ref<HTMLCanvasElement | null>(null);
+let { width: canvasWidth, height: canvasHeight } = useElementSize(canvas);
+watch([cells, canvasWidth, canvasHeight], () => {
+  nextTick(() => {
+    if (!canvas.value) {
+      return;
+    }
+
+    let ctx = canvas.value.getContext("2d");
+    if (!ctx) {
+      return;
+    }
+
+    const padding = 2;
+    const color = "rgb(75, 85, 99)";
+    const width = (canvasWidth.value - 2*padding) / maxRows.value;
+    const height = (canvasHeight.value - 2*padding) / maxRows.value;
+
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.clearRect(0, 0, canvasWidth.value, canvasHeight.value);
+    for (let r=0; r<maxRows.value; r++) {
+      for (let c=0; c<maxRows.value; c++) {
+        ctx.strokeRect(c*width+padding, r*height+padding, width, height);
+        if (cells.value[r][c]) {
+          ctx.fillRect(c*width+padding, r*height+padding, width, height);
+        }
+      }
+    }
+  });
+});
 
 // Board controls
 let stepCount = ref(0);
+let loop = ref(false);
+let restart = ref(false);
 let running = ref(false);
 let runTimer: number | null  = null;
 function run(_run: boolean) {
   const STEP_INTERVAL = 200;
   if (_run) {
+    if (restart.value) {
+      reset();
+      restart.value = false;
+    }
     runTimer = window.setInterval(() => {
       let changed = step();
       // stop if state not changing
       if (!changed && runTimer) {
         window.clearInterval(runTimer);
         running.value = false;
+        restart.value = true;
       }
     }, STEP_INTERVAL);
   } else if (runTimer)  {
@@ -137,21 +197,36 @@ function run(_run: boolean) {
 }
 function reset() {
   cells.value = initIdToBoard();
+  hare.value = initIdToBoard();
+  loop.value = false;
   stepCount.value = 0;
 }
 
-function toggleCell(c:number, r:number) {
-  if (!props.toggle) {
+function toggleCell(e: MouseEvent) {
+  if (!props.toggle || running.value || !canvas.value) {
     return;
   }
-  if (!running.value) {
-    cells.value[r][c] = !cells.value[r][c];
+  const canvasRect = canvas.value.getBoundingClientRect();
+  const width = canvasRect.width / maxRows.value;
+  const height = canvasRect.height / maxRows.value;
+  const pos = {
+    x: e.clientX - canvasRect.x,
+    y: e.clientY - canvasRect.y,
   }
+  let r = Math.floor(pos.y / height);
+  let c = Math.floor(pos.x / width);
+  cells.value[r][c] = !cells.value[r][c];
   emit("initIdChanged", boardToInitId());
 }
 
 watch(running, () => {
   emit("running", running.value);
+});
+watch(stepCount, () => {
+  emit("stepCountChanged", stepCount.value);
+});
+watch(loop, () => {
+  emit("loopChanged", loop.value);
 });
 
 // autorun
@@ -164,26 +239,25 @@ onMounted(() => {
 
 <template>
   <div class="inline-block m-2 align-top">
-    <div
-      class="w-500px h-500px border-1 border-solid border-gray-500 dark:border-gray-50 m-auto p-0 grid"
-      :class="[
-        `grid-cols-${maxRows}`,
-        `grid-rows-${maxRows}`,
-        {'w-100px h-100px': small},
-        {'border-2 border-green-500': stepCount === 0},
-      ]"
+    <canvas
+      class="w-full aspect-square m-auto p-0"
+      :width="small ? 100 : canvasWidth"
+      :height="small ? 100 : canvasHeight"
+      ref="canvas"
+      @click="toggleCell"
     >
-      <template v-for="(row, r) in cells">
-        <template v-for="(cell, c) in row">
-          <GOLCell :col="c" :row="r" :val="cell" @click="toggleCell(c, r)"/>
-        </template>
-      </template>
-    </div>
+    </canvas>
     <div v-if="controls">
-      <button class="btn" @click="step">Step</button>
+      <button class="btn" :disabled="running" @click="step">Step</button>
       <button class="btn" v-if="!running" @click="run(true)">Run</button>
       <button class="btn bg-red-500" v-else @click="run(false)">Stop</button>
       <button class="btn bg-red-500" :disabled="running" @click="reset">Reset</button>
     </div>
   </div>
 </template>
+
+<style>
+.aspect-square {
+  aspect-ratio: 1;
+}
+</style>

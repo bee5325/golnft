@@ -3,7 +3,8 @@ import "dotenv/config";
 import express from 'express';
 import { ethers } from 'ethers';
 import cors from 'cors';
-import { Collection, Taken } from './database';
+import { Collection, Minted, TokenMeta } from './database';
+import { genGIF, genBaseToken } from './genGIF';
 
 const port = 3000;
 
@@ -21,30 +22,38 @@ app.put("/board", async (req, res) => {
   }
 
   // check if all taken
-  let takenEntry = await Taken.findOne({ rows });
-  let taken: Array<string> = takenEntry ? takenEntry.initStates : [];
-  const takenCount = taken.length;
-  if (takenCount === Math.pow(2, rows*rows)) {
-    res.status(400).send({ msg: `All possibilities were already taken for ${rows} rows` });
+  let mintedDocs = await Minted.find({ rows }).select('initState');
+  let minted = mintedDocs.map((m) => m.initState);
+  if (minted.length === Math.pow(2, rows*rows)) {
+    res.status(400).send({ msg: `All possibilities were already minted for ${rows} rows` });
     return;
   }
 
   // get a non repeated init state
   let initState = randomize(rows);
   let initStateStr = bigNumToInitState(initState, rows);
-  while (taken && taken.includes(initStateStr)) {
+  while (minted.includes(initStateStr)) {
     initState = randomize(rows);
     initStateStr = bigNumToInitState(initState, rows);
   }
-  taken.push(initStateStr);
-  await Taken.replaceOne(
-    { rows },
-    { rows, initStates: taken },
-    { upsert: true }
-  );
+  let { gifUrl, stepCount, loop } = await genGIF(initStateStr);
+  let baseToken: TokenMeta = {
+    name: `GOL #${initState}`,
+    date: Date.now(),
+    description: "Art created based on rules of Conway's Game of Life.",
+    initState,
+    rows: initStateStr.length / 4,
+    image: gifUrl,
+    externalUrl: `${process.env.SITE_URL}/${initState}`,
+    attributes: [
+      { trait_types: "Step count", value: stepCount },
+      { trait_types: "Loop", value: loop ? "Yes": "No" },
+    ],
+  }
 
-  // calculate signature to make sure it comes from the server itself
-  let signature = await getSignature(rows, initState, account);
+  let baseTokenUrl = await genBaseToken(initStateStr, baseToken);
+
+  // update database (collection)
   let col = await Collection.findOne({ account });
   let oldCol = col ? col.collections : [];
   let newCol = {
@@ -52,7 +61,16 @@ app.put("/board", async (req, res) => {
     collections: [...oldCol, initStateStr]
   };
   await Collection.replaceOne({ account }, newCol, { upsert: true });
-  res.send({ initState: initStateStr, signature });
+
+  // update database (minted)
+  minted.push(initStateStr);
+  let newMinted = new Minted({ ...baseToken, baseTokenUrl });
+  await newMinted.save();
+
+  // calculate signature to make sure it comes from the server itself
+  let signature = await getSignature(rows, initState, account);
+
+  res.send({ initState: initStateStr, signature, baseTokenUrl });
 });
 
 app.get("/collections/:account", async (req, res) => {
@@ -61,7 +79,18 @@ app.get("/collections/:account", async (req, res) => {
   res.send(col ? col.collections : []);
 });
 
-app.listen(port, async () => {
+app.get("/minted/:row", async (req, res) => {
+  let { row } = req.params;
+  let rows = await Minted.count({ rows: row }); 
+  console.log(rows);
+  res.send({ rows });
+});
+
+// setup
+if (!process.env.PRIVATE_KEY) {
+  throw new Error("PRIVATE_KEY is not set in environment variables");
+}
+app.listen(port, () => {
   console.log(`Express is listening at http://localhost:${port}`);
 });
 
@@ -71,7 +100,7 @@ app.listen(port, async () => {
  *
  **/
 async function getSignature(rows: number, initState: ethers.BigNumber, address: string) {
-  let signer = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"); //process.env.PRIVATE_KEY!);
+  let signer = new ethers.Wallet(process.env.PRIVATE_KEY!);
   let abiCoder = ethers.utils.defaultAbiCoder;
 
   return await signer.signMessage(

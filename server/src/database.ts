@@ -2,26 +2,45 @@ import "dotenv/config";
 import mongoose from 'mongoose';
 
 // collections
-interface Col {
+interface CollectionType {
   account: string;
   collections: [string];
 }
-const collectionSchema = new mongoose.Schema<Col>({
+const collectionSchema = new mongoose.Schema<CollectionType>({
   account: String,
   collections: [String],
 });
-const Collection = mongoose.model<Col>("Collection", collectionSchema);
+const Collection = mongoose.model<CollectionType>("Collection", collectionSchema);
 
-// taken
-interface Tak {
+// minted
+type UrlString = string;
+type Traits =
+  { trait_types: "Step count", value: number } |
+  { trait_types: "Loop", value: "Yes" | "No" };
+
+interface TokenMeta {
+  name: string;
+  date: number;
   rows: number;
-  initStates: [string];
+  description: string;
+  initState: string;
+  image: UrlString;
+  externalUrl: UrlString;
+  attributes: Array<Traits>;
+  baseTokenUrl?: UrlString;
 }
-const takenSchema = new mongoose.Schema<Tak>({
-  rows: Number,
-  initStates: [String],
+const mintedSchema = new mongoose.Schema<TokenMeta>({
+  name: { type: String, required: true },
+  date: { type: Number, required: true },
+  rows: { type: Number, index: true, required: true },
+  description: { type: String, required: true },
+  initState: { type: String, index: true },
+  image: { type: String, required: true },
+  externalUrl: { type: String, required: true },
+  attributes: { type: [{}], required: true },
+  baseTokenUrl: { type: String, required: true },
 });
-const Taken = mongoose.model<Tak>("Taken", takenSchema);
+const Minted = mongoose.model<TokenMeta>("Minted", mintedSchema);
 
 // setup
 if (!process.env.DB_URL) {
@@ -29,4 +48,4 @@ if (!process.env.DB_URL) {
 }
 mongoose.connect(process.env.DB_URL);
 
-export { Col, Collection, Tak, Taken };
+export { Collection, Minted, TokenMeta };

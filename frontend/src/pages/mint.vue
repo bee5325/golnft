@@ -1,15 +1,15 @@
-<script lang="ts">
-export default { name: 'Mint' };
-</script>
-
 <script setup lang="ts">
 import { useContract } from "../composables/contract";
 import axios from "axios";
 
+useHead({
+  title: 'Mint',
+})
+
 // takes care of the contract
 let { account, connect, price: _price, payToMint } = useContract();
 
-let price = ref("0.0001");
+let price = ref<string>("?");
 onActivated(async () => {
   price.value = await _price.value;
 });
@@ -24,17 +24,42 @@ function clearNotification() {
   notification.value = {msg: "", type: "none"};
 }
 
-// contract interaction
+// show minted count
 let rows = ref(3);
+let mintedCount = ref(0);
+watchEffect(async () => {
+  try {
+    let resp = await axios.get(`http://localhost:3000/minted/${rows.value}`);
+    mintedCount.value = resp.data.rows;
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+// contract interaction
 let initId = ref<string | null>(null);
 let minting = ref(false);
+let connecting = ref(false);
+
+async function connectWallet() {
+  connecting.value = true;
+  try {
+    await connect();
+  } finally {
+    connecting.value = false;
+  }
+}
+
 async function mint() {
   // register start of minting to disable duplication
   minting.value = true;
 
   try {
     // first get init state from server
-    let { data: { initState, signature } } = await axios.put("http://localhost:3000/board", {rows: rows.value, account: account.value});
+    let { data: { initState, signature } } = await axios.put(
+      "http://localhost:3000/board",
+      {rows: rows.value, account: account.value}
+    );
 
     // pay and mint on chain
     let res = await payToMint(rows.value, initState, signature);
@@ -74,8 +99,18 @@ async function mint() {
         type: "error",
         msg: err.response.data.msg,
       };
+    } else if (err.message === "Network Error") {
+      notification.value = {
+        type: "error",
+        msg: "Network error. Please try again later",
+      };
     } else {
+      notification.value = {
+        type: "error",
+        msg: "Unexpected error happened. Please try again later",
+      }
       console.trace(err);
+      console.log(JSON.stringify(err));
     }
   }
 
@@ -99,13 +134,16 @@ watch([account, initId], async () => {
 <template>
   <div>
     <Notification :type="notification.type" :msg="notification.msg" @clearNotification="clearNotification" />
-    <h1 class="font-bold text-xl uppercase">Mint</h1>
-    <button v-if="!account" class="btn" @click="connect">Connect your wallet</button>
+    <h1 class="font-bold text-green-600 text-2xl uppercase m-2">Mint</h1>
+    <button v-if="!account" class="btn" :disabled="connecting" @click="connectWallet">Connect your wallet</button>
     <div v-else>
       <p>Account <span class="font-bold">{{account}}</span></p>
       <label>Number of rows</label>
-      <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
-      <button class="btn" :disabled="minting" @click="mint">Mint for {{ price }} ETH</button>
+      <div>
+        <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
+        <span>(<span class="font-bold">{{mintedCount}}</span> of {{Math.pow(2,rows*rows)}} minted)</span>
+      </div>
+      <button class="btn" :disabled="minting || price === '?'" @click="mint">Mint for {{ price }} ETH</button>
       <p class="font-bold" v-if="initId !== null">{{initId}}</p>
       <GOLBoard
         v-if="initId !== null"
@@ -115,7 +153,7 @@ watch([account, initId], async () => {
       />
     </div>
     <hr class="m-4">
-    <h1 class="font-bold text-xl uppercase mb-2">My collections ({{collections.length}})</h1>
+    <h1 class="font-bold text-green-600 text-2xl uppercase m-2">My collections ({{collections.length}})</h1>
     <Collections :collections="collections" />
   </div>
 </template>

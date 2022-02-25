@@ -15,7 +15,6 @@ defineProps({
       <GOLBoard
         :toggle="false"
         :controls="false"
-        :autorun="true"
         :initId="col"
         :small="true"
       />

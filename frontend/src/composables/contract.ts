@@ -107,16 +107,26 @@ export const useContract = () => {
     });
 
   async function payToMint(rows: number, initState: string, signature: string) {
+    let latestPrice = await price.value;
+    if (!latestPrice) {
+      throw new Error("Unable to get latest price");
+    }
     let pay = await contract.payToMint(
       unref(rows),
       ethers.BigNumber.from(`0x${unref(initState)}`),
       signature,
-      { value: ethers.utils.parseEther(await price.value) }
+      { value: ethers.utils.parseEther(latestPrice) }
     );
     return await pay.wait();
   }
 
-  let price = computed(async () => ethers.utils.formatEther(await contract.getPrice()));
+  let price = computed(async () => {
+    try {
+      return ethers.utils.formatEther(await contract.getPrice())
+    } catch {
+      return "?";
+    }
+  });
 
   return {
     account: currentAccount,
