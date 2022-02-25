@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "postinstall": "(cd frontend && npm install); (cd server && npm install); (cd contract && npm install)",
-    "dev": "(cd frontend && npm run dev) & (cd server && npm run dev) & (cd contract && npx hardhat node)"
+    "dev": "(cd frontend && npm run dev) & (cd server && npm run dev) & (cd contract && npx hardhat node) &"
   },
   "keywords": [],
   "author": "",
