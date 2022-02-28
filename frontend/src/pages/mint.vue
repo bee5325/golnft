@@ -9,6 +9,12 @@ let { account, connect, price: _price, payToMint } = useContract();
 let price = ref<string>("?");
 onActivated(async () => {
   price.value = await _price.value;
+  if (price.value === "?") {
+    notification.value = {
+      type: "error",
+      msg: "Error getting latest price for minting. Please try again later, and contact admin if the issue persists."
+    }
+  }
 });
 
 // notification
@@ -22,10 +28,11 @@ function clearNotification() {
 }
 
 // show minted count
+let initId = ref<string>("????????????");
 let meta = ref(null);
 let rows = ref(3);
 let mintedCount = ref(0);
-watchEffect(async () => {
+watch([rows, initId], async () => {
   try {
     let resp = await axios.get(`${config.SERVER_URL}/minted/${rows.value}`);
     mintedCount.value = resp.data.rows;
@@ -35,10 +42,8 @@ watchEffect(async () => {
 });
 
 // contract interaction
-let initId = ref<string>("????????????");
 let minting = ref(false);
 let connecting = ref(false);
-
 async function connectWallet() {
   connecting.value = true;
   try {
@@ -154,7 +159,10 @@ watch([account, initId], async () => {
         <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
       </div>
       <p>(<span class="font-bold">{{mintedCount}}</span> of {{Math.pow(2,rows*rows)}} minted)</p>
-      <button class="btn" :disabled="minting || price === '?'" @click="mint">Mint for {{ price }} ETH</button>
+      <button class="btn relative" :disabled="minting || price === '?'" @click="mint">
+        Mint for {{ price }} ETH
+        <eos-icons-loading v-if="minting" class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2" />
+      </button>
       <p class="font-bold">{{initId}}</p>
       <div class="grid grid-cols-3 items-center">
         <GOLBoard
@@ -165,7 +173,7 @@ watch([account, initId], async () => {
           :initId="initId"
           :autorun="true"
         />
-        <GOLInfo v-if="meta" :meta="meta" />
+        <GOLInfo v-if="meta" :meta="meta" :loading="false" />
       </div>
     </template>
     <hr class="m-4">

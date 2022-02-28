@@ -19,18 +19,17 @@ interface GolInfoProps {
   loading: boolean;
 }
 
-let props = withDefaults(
+withDefaults(
   defineProps<GolInfoProps>(), 
   {
     loading: false,
   }
 );
-console.log(props);
 </script>
 
 <template>
   <div class="max-w-xl inline-block p-4 rounded-md border-1 border-solid border-gray-400 bg-white z-1">
-    <div v-if="loading">Loading</div>
+    <eos-icons-loading v-if="loading" class="text-green-900 w-6 h-6 ml-2" />
     <transition
       v-else-if="meta"
       enter-from-class="scale-0"
@@ -57,7 +56,7 @@ console.log(props);
         </tr>
         <tr>
           <td class="py-2"><label class="mr-2 whitespace-nowrap">GIF URL:</label></td>
-          <td class="py-2"><a :href="meta.image" target="_blank" class="text-blue-500">Image</a></td>
+          <td class="py-2"><a :href="meta.image" target="_blank" class="text-blue-500">GIF file <ic-baseline-open-in-new /></a></td>
         </tr>
         <tr v-for="attr of meta.attributes" :key="attr.trait_types">
           <td class="py-2"><label class="mr-2 whitespace-nowrap">{{attr.trait_types}}:</label></td>

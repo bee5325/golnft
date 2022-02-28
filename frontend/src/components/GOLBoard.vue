@@ -262,7 +262,7 @@ watch(loop, () => {
 });
 
 // autorun
-onMounted(() => {
+watch(() => props.initId, () => {
   if (props.autorun) {
     run(true);
   }

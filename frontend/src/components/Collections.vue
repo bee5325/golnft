@@ -19,7 +19,7 @@ let hovered = ref<string>("");
 let hoveredMeta = ref(null);
 let loading = ref(false);
 
-async function showInfo(initState: string) {
+watch(hovered, async (initState: string) => {
   hovered.value = initState;
   loading.value = true;
 
@@ -31,7 +31,7 @@ async function showInfo(initState: string) {
 
   hoveredMeta.value = (await axios.get(`${config.SERVER_URL}/board/${initState}`)).data;
   loading.value = false;
-}
+});
 </script>
 
 <template>
@@ -41,8 +41,8 @@ async function showInfo(initState: string) {
       v-for="col of collections"
       :key="col"
       class="relative inline-block"
-      @mouseover="showInfo(col)"
-      @mouseleave="showInfo('')"
+      @mouseover="hovered = col"
+      @mouseleave="hovered = ''"
       @touchend="if(hovered) hovered = '';"
     >
       <GOLBoard
