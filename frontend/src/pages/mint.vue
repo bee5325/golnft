@@ -3,10 +3,6 @@ import { useContract } from "../composables/contract";
 import axios from "axios";
 import { config } from "../config";
 
-useHead({
-  title: 'Mint',
-})
-
 // takes care of the contract
 let { account, connect, price: _price, payToMint } = useContract();
 
@@ -26,6 +22,7 @@ function clearNotification() {
 }
 
 // show minted count
+let meta = ref(null);
 let rows = ref(3);
 let mintedCount = ref(0);
 watchEffect(async () => {
@@ -63,7 +60,7 @@ async function mint() {
 
   try {
     // first get init state from server
-    let { data: { initState, signature } } = await axios.put(
+    let { data: { initState, meta: newMeta, signature } } = await axios.put(
       `${config.SERVER_URL}/board`,
       {rows: rows.value, account: account.value}
     );
@@ -77,6 +74,7 @@ async function mint() {
 
     // display
     initId.value = initState;
+    meta.value = newMeta;
   } catch (err: any) {
     if (err.code) {
       switch (err.code) {
@@ -126,14 +124,20 @@ async function mint() {
 
 // collections
 let collections = ref([]);
+let collectionError = ref(false);
 watch([account, initId], async () => {
   if (!account.value) {
     return;
   }
 
-  let col = (await axios.get(`${config.SERVER_URL}/collections/${account.value}`)).data;
-  if (col) {
-    collections.value = col;
+  try {
+    let col = (await axios.get(`${config.SERVER_URL}/collections/${account.value}`)).data;
+    if (col) {
+      collectionError.value = false;
+      collections.value = col;
+    }
+  } catch (err) {
+    collectionError.value = true;
   }
 });
 </script>
@@ -143,7 +147,7 @@ watch([account, initId], async () => {
     <Notification :type="notification.type" :msg="notification.msg" @clearNotification="clearNotification" />
     <h1 class="font-bold text-green-600 text-2xl uppercase m-2">Mint</h1>
     <button v-if="!account" class="btn" :disabled="connecting" @click="connectWallet">Connect your wallet</button>
-    <div v-else>
+    <template v-else>
       <p>Account <span class="font-bold">{{account}}</span></p>
       <div class="w-390px m-auto">
         <label>Number of rows</label>
@@ -152,16 +156,20 @@ watch([account, initId], async () => {
       <p>(<span class="font-bold">{{mintedCount}}</span> of {{Math.pow(2,rows*rows)}} minted)</p>
       <button class="btn" :disabled="minting || price === '?'" @click="mint">Mint for {{ price }} ETH</button>
       <p class="font-bold">{{initId}}</p>
-      <GOLBoard
-        :width="500"
-        :height="500"
-        :toggle="false"
-        :initId="initId"
-        :autorun="true"
-      />
-    </div>
+      <div class="grid grid-cols-3 items-center">
+        <GOLBoard
+          class="col-start-2"
+          :width="500"
+          :height="500"
+          :toggle="false"
+          :initId="initId"
+          :autorun="true"
+        />
+        <GOLInfo v-if="meta" :meta="meta" />
+      </div>
+    </template>
     <hr class="m-4">
     <h1 class="font-bold text-green-600 text-2xl uppercase m-2">My collections ({{collections.length}})</h1>
-    <Collections :collections="collections" />
+    <Collections :collections="collections" :error="collectionError" />
   </div>
 </template>

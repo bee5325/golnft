@@ -97,10 +97,10 @@ async function genGIF(initState: string): Promise<{
   return { gifUrl, stepCount, loop };
 }
 
-async function genBaseToken(initState: string, baseToken: TokenMeta) {
+async function genMeta(initState: string, meta: TokenMeta) {
   console.log("Start upload metafile");
   let res = await pinata.pinJSONToIPFS(
-    baseToken,
+    meta,
     { pinataMetadata: { name: `${initState}.json` }}
   );
   console.log("Done upload metafile");
@@ -229,4 +229,4 @@ async function setup() {
 }
 setup();
 
-export { genGIF, genBaseToken };
+export { genGIF, genMeta };

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 let maxRows = ref(6);
-let initId = ref("0000001C000E000000000000");
+let initId = ref("00000000001C000E00000000");
+let initIdRaw = ref(initId.value);
 let stepCount = ref(0);
 let isLoop = ref<"No" | "Yes">("No");
 let running = ref(false);
@@ -13,16 +14,26 @@ function randomize() {
     }, 0);
     return row.toString(16).padStart(4, "0");
   });
-  initId.value = rows.join("");
+  initIdRaw.value = rows.join("");
   stepCount.value = 0;
 }
 
 function reset() {
-  initId.value = initId.value.padEnd(maxRows.value*4, "0").slice(0, maxRows.value*4);
+  if (initId.value.length % 4 !== 0) {
+    return;
+  }
+  initIdRaw.value = initId.value.padEnd(maxRows.value*4, "0").slice(0, maxRows.value*4);
 }
 
 watchEffect(() => {
   maxRows.value = initId.value.length / 4;
+});
+
+watchEffect(() => {
+  let rows = initIdRaw.value.length / 4;
+  if (initIdRaw.value.length % 4 === 0 && rows >=3 && rows <= 16) {
+    initId.value = initIdRaw.value;
+  }
 });
 </script>
 
@@ -33,7 +44,6 @@ watchEffect(() => {
       <GOLBoard
         class="col-start-2"
         :initId="initId"
-        :max-rows="maxRows"
         @running="(_run) => running = _run"
         @init-id-changed="(_id) => initId = _id"
         @step-count-changed="(_step) => stepCount = _step"
@@ -41,10 +51,10 @@ watchEffect(() => {
       />
       <div class="inline-block w-full border-1 rounded-md border-solid border-gray-500 p-5">
         <label>Number of rows</label>
-        <input type="number" v-model="maxRows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" @input="reset" />
+        <input type="number" v-model="maxRows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" @change="reset" />
         <p>
           ID:
-          <input class="font-bold break-all border-gray-300 border-1 border-solid w-3/4 px-2 py-1 m-2" v-model="initId" />
+          <input class="font-bold break-all border-gray-300 border-1 border-solid w-3/4 px-2 py-1 m-2" v-model="initIdRaw" />
         </p>
         <p>Step count: <span class="font-bold">{{stepCount}}</span></p>
         <p>Loop: <span class="font-bold">{{isLoop}}</span></p>

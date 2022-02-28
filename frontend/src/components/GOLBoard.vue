@@ -16,6 +16,10 @@ let props = defineProps({
     type: Boolean,
     default: false,
   },
+  forceLoop: {
+    type: Boolean,
+    default: false,
+  },
   small: {
     type: Boolean,
     default: false,
@@ -149,11 +153,15 @@ function loopDetected(): boolean {
 let canvas = ref<HTMLCanvasElement | null>(null);
 let { width: canvasWidth, height: canvasHeight } = useElementSize(canvas);
 // allow parent override height and width
-if (props.width > 0) {
-  canvasWidth.value = props.width;
-}
-if (props.height > 0) {
-  canvasHeight.value = props.height;
+onMounted(resetSize);
+onActivated(resetSize);
+function resetSize() {
+  if (props.width > 0) {
+    canvasWidth.value = props.width;
+  }
+  if (props.height > 0) {
+    canvasHeight.value = props.height;
+  }
 }
 
 watch([cells, canvasWidth, canvasHeight], () => {
@@ -256,6 +264,25 @@ watch(loop, () => {
 // autorun
 onMounted(() => {
   if (props.autorun) {
+    run(true);
+  }
+});
+
+// forceLoop
+watch(
+  [() => props.forceLoop, restart],
+  ([newLoop, newRestart], [oldLoop]) => {
+  // force loop value changed
+  if (oldLoop !== newLoop) {
+    reset();
+    if (newLoop) {
+      run(true);
+    } else {
+      run(false);
+    } 
+  }
+  // restart after finish
+  if (newLoop && newRestart) {
     run(true);
   }
 });

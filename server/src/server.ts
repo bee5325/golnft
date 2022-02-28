@@ -4,7 +4,7 @@ import express from 'express';
 import { ethers } from 'ethers';
 import cors from 'cors';
 import { Collection, Minted, TokenMeta } from './database';
-import { genGIF, genBaseToken } from './genGIF';
+import { genGIF, genMeta } from './genGIF';
 
 const port = 3000;
 
@@ -37,11 +37,11 @@ app.put("/board", async (req, res) => {
     initStateStr = bigNumToInitState(initState, rows);
   }
   let { gifUrl, stepCount, loop } = await genGIF(initStateStr);
-  let baseToken: TokenMeta = {
-    name: `GOL #${initState}`,
+  let meta: TokenMeta = {
+    name: `GOL #${initStateStr}`,
     date: Date.now(),
     description: "Art created based on rules of Conway's Game of Life.",
-    initState,
+    initState: initStateStr,
     rows: initStateStr.length / 4,
     image: gifUrl,
     externalUrl: `${process.env.SITE_URL}/${initState}`,
@@ -51,7 +51,7 @@ app.put("/board", async (req, res) => {
     ],
   }
 
-  let baseTokenUrl = await genBaseToken(initStateStr, baseToken);
+  let baseTokenUrl = await genMeta(initStateStr, meta);
 
   // update database (collection)
   let col = await Collection.findOne({ account });
@@ -64,13 +64,19 @@ app.put("/board", async (req, res) => {
 
   // update database (minted)
   minted.push(initStateStr);
-  let newMinted = new Minted({ ...baseToken, baseTokenUrl });
+  let newMinted = new Minted({ ...meta, baseTokenUrl });
   await newMinted.save();
 
   // calculate signature to make sure it comes from the server itself
   let signature = await getSignature(rows, initState, account);
 
-  res.send({ initState: initStateStr, signature, baseTokenUrl });
+  res.send({ initState: initStateStr, signature, meta });
+});
+
+app.get("/board/:initState", async (req, res) => {
+  let { initState } = req.params;
+  let meta = await Minted.findOne({ initState });
+  res.send(meta);
 });
 
 app.get("/collections/:account", async (req, res) => {
