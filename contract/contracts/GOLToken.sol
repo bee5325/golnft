@@ -13,6 +13,7 @@ contract GOLToken is ERC721URIStorage, Ownable {
   Counters.Counter private _tokenIds;
   uint price;
   mapping(uint => bool) minted;
+  mapping(uint => string) tokenUri;
 
   event Minted(uint id, address to, uint rows, uint initState);
 
@@ -20,7 +21,7 @@ contract GOLToken is ERC721URIStorage, Ownable {
     price = 0.0001 ether;
   }
 
-  function payToMint(uint rows, uint initState, bytes memory signature) payable public returns (uint) {
+  function payToMint(uint rows, uint initState, string memory _tokenUri, bytes memory signature) payable public returns (uint) {
     require(msg.value >= price, "Please pay ETH to mint");
     require(rows >= 3 && rows <= 16, "Rows should be between 3 and 16");
     require(!minted[initState], "Init state already exists");
@@ -38,6 +39,7 @@ contract GOLToken is ERC721URIStorage, Ownable {
     _tokenIds.increment();
     uint newId = _tokenIds.current();
     _safeMint(msg.sender, newId);
+    _setTokenURI(newId, _tokenUri);
 
     payable(owner()).transfer(msg.value);
 

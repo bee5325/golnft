@@ -37,6 +37,11 @@ const contractAbi = [
         "type": "uint256"
       },
       {
+        "internalType": "string",
+        "name": "_tokenUri",
+        "type": "string"
+      },
+      {
         "internalType": "bytes",
         "name": "signature",
         "type": "bytes"
@@ -79,13 +84,18 @@ export const useContract = () => {
   let provider = new ethers.providers.Web3Provider(window.ethereum);
   let signer = provider.getSigner();
   let contractAddress = config.CONTRACT_ADDRESS;
-  let contract = new ethers.Contract(
+  let contract = ref(new ethers.Contract(
     contractAddress,
     contractAbi,
     signer
-  );
+  ));
 
   ethereum.on('accountsChanged', handleAccountsChanged);
+  ethereum.on('chainChanged', () => {
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    contract.value = new ethers.Contract(contractAddress, contractAbi, signer);
+  });
 
   async function connect() {
     await provider.send("eth_requestAccounts", []);
@@ -112,7 +122,7 @@ export const useContract = () => {
     if (!latestPrice) {
       throw new Error("Unable to get latest price");
     }
-    let pay = await contract.payToMint(
+    let pay = await contract.value.payToMint(
       unref(rows),
       ethers.BigNumber.from(`0x${unref(initState)}`),
       signature,
@@ -123,7 +133,7 @@ export const useContract = () => {
 
   let price = computed(async () => {
     try {
-      return ethers.utils.formatEther(await contract.getPrice())
+      return ethers.utils.formatEther(await contract.value.getPrice())
     } catch {
       return "?";
     }

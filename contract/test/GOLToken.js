@@ -36,6 +36,7 @@ describe("GOL Token", () => {
     const MIN_PAYMENT = Math.pow(10, 14); // 0.0001 ether
     const ROWS = 5;
     const INIT_STATE = "00000015000400060003";
+    const TOKEN_URI = "tokenUri";
 
     let hardhatToken;
     let SIGNATURE;
@@ -50,7 +51,7 @@ describe("GOL Token", () => {
       await expect(
         hardhatToken
           .connect(addr1)
-          .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT - 1 }))
+          .payToMint(ROWS, INIT_STATE, TOKEN_URI, SIGNATURE, { value: MIN_PAYMENT - 1 }))
         .to.be.revertedWith("Please pay ETH to mint");
     });
 
@@ -58,17 +59,12 @@ describe("GOL Token", () => {
       await expect(
         await hardhatToken
           .connect(addr1)
-          .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT }))
-        .to.changeEtherBalance(addr1, -MIN_PAYMENT);
-
-      await expect(
-        await hardhatToken
-          .connect(addr1)
-          .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT }))
+          .payToMint(ROWS, INIT_STATE, TOKEN_URI, SIGNATURE, { value: MIN_PAYMENT }))
+        .to.changeEtherBalance(addr1, -MIN_PAYMENT)
         .to.changeEtherBalance(owner, MIN_PAYMENT);
     });
 
-    it.only("should revert if signature not verified", async () => {
+    it("should revert if signature not verified", async () => {
       const NON_SIGNATURE = SIGNATURE.replace("1", "2");
       const INIT_STATE_2 = "000100010001";
       const SIGNATURE_2 = await getSignature(3, INIT_STATE_2, addr2.address);
@@ -76,24 +72,24 @@ describe("GOL Token", () => {
       await expect(
         hardhatToken
           .connect(addr1)
-          .payToMint(ROWS, INIT_STATE, NON_SIGNATURE, { value: MIN_PAYMENT }))
+          .payToMint(ROWS, INIT_STATE, TOKEN_URI, NON_SIGNATURE, { value: MIN_PAYMENT }))
         .to.be.revertedWith("Signature not verified");
 
       // should not revert
       await hardhatToken
         .connect(addr1)
-        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT });
+        .payToMint(ROWS, INIT_STATE, TOKEN_URI, SIGNATURE, { value: MIN_PAYMENT });
 
       // should not revert
       await hardhatToken
         .connect(addr2)
-        .payToMint(3, INIT_STATE_2, SIGNATURE_2, { value: MIN_PAYMENT });
+        .payToMint(3, INIT_STATE_2, TOKEN_URI, SIGNATURE_2, { value: MIN_PAYMENT });
     });
 
     it("should mint token to buyer", async () => {
       await hardhatToken
         .connect(addr1)
-        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT });
+        .payToMint(ROWS, INIT_STATE, TOKEN_URI, SIGNATURE, { value: MIN_PAYMENT });
 
       expect(await hardhatToken.balanceOf(addr1.address)).to.be.eq(1);
       expect(await hardhatToken.ownerOf(1)).to.be.eq(addr1.address);
@@ -101,28 +97,36 @@ describe("GOL Token", () => {
 
     it("should only allow minting between 3 and 16 rows", async () => {
       await expect(hardhatToken.connect(addr1)
-        .payToMint(2, INIT_STATE, await getSignature(2, INIT_STATE, addr1.address), { value: MIN_PAYMENT }))
+        .payToMint(2, INIT_STATE, TOKEN_URI, await getSignature(2, INIT_STATE, addr1.address), { value: MIN_PAYMENT }))
         .to.be.revertedWith("Rows should be between 3 and 16");
 
       await expect(hardhatToken.connect(addr1)
-        .payToMint(17, INIT_STATE, await getSignature(2, INIT_STATE, addr1.address), { value: MIN_PAYMENT }))
+        .payToMint(17, INIT_STATE, TOKEN_URI, await getSignature(2, INIT_STATE, addr1.address), { value: MIN_PAYMENT }))
         .to.be.revertedWith("Rows should be between 3 and 16");
     });
 
     it("should revert if init state already exists", async () => {
       await hardhatToken.connect(addr1)
-        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT });
+        .payToMint(ROWS, INIT_STATE, TOKEN_URI, SIGNATURE, { value: MIN_PAYMENT });
 
       // same init state should be reverted
       await expect(hardhatToken.connect(addr1)
-        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: MIN_PAYMENT }))
+        .payToMint(ROWS, INIT_STATE, TOKEN_URI, SIGNATURE, { value: MIN_PAYMENT }))
         .to.be.revertedWith("Init state already exists");
+    });
+
+    it.only("should store token uri", async () => {
+      await hardhatToken.connect(addr1)
+        .payToMint(ROWS, INIT_STATE, "token uri for 1", SIGNATURE, { value: MIN_PAYMENT });
+
+      expect(await hardhatToken.tokenURI(1)).to.be.eq("token uri for 1");
     });
   });
 
   describe("update price", () => {
     const ROWS = 5;
     const INIT_STATE = "00000015000400060003";
+    const TOKEN_URI = "tokenUri";
 
     let hardhatToken;
     let SIGNATURE;
@@ -149,13 +153,13 @@ describe("GOL Token", () => {
       await expect(
         hardhatToken
           .connect(addr1)
-          .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: 1 }))
+          .payToMint(ROWS, INIT_STATE, TOKEN_URI, SIGNATURE, { value: 1 }))
         .to.be.revertedWith("Please pay ETH to mint");
 
       // success
       await hardhatToken
         .connect(addr1)
-        .payToMint(ROWS, INIT_STATE, SIGNATURE, { value: 2 });
+        .payToMint(ROWS, INIT_STATE, TOKEN_URI, SIGNATURE, { value: 2 });
     });
   });
 });

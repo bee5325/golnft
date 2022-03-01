@@ -7,12 +7,14 @@ import { config } from "../config";
 let { account, connect, price: _price, payToMint } = useContract();
 
 let price = ref<string>("?");
-onActivated(async () => {
+watchEffect(async () => {
   price.value = await _price.value;
   if (price.value === "?") {
     notification.value = {
       type: "error",
-      msg: "Error getting latest price for minting. Please try again later, and contact admin if the issue persists."
+      msg: `
+        Error getting latest price for minting. Make sure you are connected to the correct network (Arbitrum).\n
+        Contact admin if the issue persists.`
     }
   }
 });
