@@ -6,14 +6,28 @@ import cors from 'cors';
 import { Collection, Minted, TokenMeta } from './database';
 import { genGIF, genMeta } from './genGIF';
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
+interface PendingTransaction {
+  meta: TokenMeta;
+  signature: string;
+}
+let pendingTransactions: Record<string, PendingTransaction> = {};
+
 app.put("/board", async (req, res) => {
   let { account, rows } = req.body;
+
+  // this is to avoid duplication of work and prevent exploit by mint repeatedly without finish payment
+  if (pendingTransactionsFound(account, rows)) {
+    let pending = getPendingTransaction(account, rows);
+    let { meta, signature } = pending;
+    res.send({ initState: meta.initState, meta, signature });
+    return;
+  }
 
   // check if rows supported
   if (rows < 3 || rows > 16) {
@@ -53,22 +67,15 @@ app.put("/board", async (req, res) => {
 
   let baseTokenUrl = await genMeta(initStateStr, meta);
 
-  // update database (collection)
-  let col = await Collection.findOne({ account });
-  let oldCol = col ? col.collections : [];
-  let newCol = {
-    account,
-    collections: [...oldCol, initStateStr]
-  };
-  await Collection.replaceOne({ account }, newCol, { upsert: true });
-
-  // update database (minted)
-  minted.push(initStateStr);
-  let newMinted = new Minted({ ...meta, baseTokenUrl });
-  await newMinted.save();
-
   // calculate signature to make sure it comes from the server itself
   let signature = await getSignature(rows, initState, account);
+
+  // Register transaction so that DB can be updated when getting confirmation from blockchain.
+  // Check dbUpdatePending() for details
+  addPendingTransactions(account, rows, {
+    meta: { ...meta, baseTokenUrl },
+    signature
+  });
 
   res.send({ initState: initStateStr, signature, meta });
 });
@@ -92,11 +99,51 @@ app.get("/minted/:row", async (req, res) => {
 });
 
 // setup
-if (!process.env.PRIVATE_KEY) {
-  throw new Error("PRIVATE_KEY is not set in environment variables");
+for (let key of ["PRIVATE_KEY", "CONTRACT_ADDRESS", "NETWORK"]) {
+  if (!process.env[key]) {
+    throw new Error(`${key} is not set in environment variables`);
+  }
 }
 app.listen(port, () => {
   console.log(`Express is listening at http://localhost:${port}`);
+
+  let abi = [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "rows",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "initState",
+          "type": "uint256"
+        }
+      ],
+      "name": "Minted",
+      "type": "event"
+    },
+  ];
+  // update db for pending transactions
+  let provider = ethers.getDefaultProvider(process.env.NETWORK);
+  let contract = new ethers.Contract(process.env.CONTRACT_ADDRESS!, abi, provider);
+  contract.on("Minted", dbUpdatePending);
 });
 
 /**
@@ -133,4 +180,44 @@ function randomize(maxRows: number) {
 
 function bigNumToInitState(bigNum: ethers.BigNumber, maxRows: number): string {
   return bigNum.toHexString().replace("0x", "").padStart(maxRows*4, "0");
+}
+
+function getPendingTransaction(account: string, rows: number): PendingTransaction {
+  return pendingTransactions[`${account}.${rows}`];
+}
+
+function pendingTransactionsFound(account: string, rows: number): boolean {
+  return pendingTransactions[`${account}.${rows}`] !== undefined;
+}
+
+function addPendingTransactions(account: string, rows: number, transaction: PendingTransaction) {
+  pendingTransactions[`${account}.${rows}`] = transaction;
+}
+
+async function dbUpdatePending(_: ethers.BigNumber, account: string, rows: ethers.BigNumber, initState: ethers.BigNumber) {
+  console.log("UPDATE PENDING", account, rows, initState);
+  account = account.toLowerCase();
+  let initStateStr = bigNumToInitState(initState, rows.toNumber());
+  let transactionId = `${account}.${rows}`;
+  let transaction = pendingTransactions[transactionId];
+
+  if (!transaction) {
+    console.error(`Pending transaction for account ${account} rows ${rows} is not found`);
+    return;
+  }
+
+  // update database (collection)
+  let col = await Collection.findOne({ account });
+  let oldCol = col ? col.collections : [];
+  let newCol = {
+    account,
+    collections: [...oldCol, initStateStr]
+  };
+  await Collection.replaceOne({ account }, newCol, { upsert: true });
+
+  // update database (minted)
+  let newMinted = new Minted(transaction.meta);
+  await newMinted.save();
+
+  delete pendingTransactions[transactionId];
 }

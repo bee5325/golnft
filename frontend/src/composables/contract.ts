@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { config } from "../config";
 
 // types
 declare let window: any;
@@ -77,7 +78,7 @@ export const useContract = () => {
   let currentAccount = ref<string>("");
   let provider = new ethers.providers.Web3Provider(window.ethereum);
   let signer = provider.getSigner();
-  let contractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+  let contractAddress = config.CONTRACT_ADDRESS;
   let contract = new ethers.Contract(
     contractAddress,
     contractAbi,

@@ -263,7 +263,7 @@ watch(loop, () => {
 
 // autorun
 watch(() => props.initId, () => {
-  if (props.autorun) {
+  if (props.autorun && revealed.value) {
     run(true);
   }
 });

@@ -14,7 +14,7 @@ contract GOLToken is ERC721URIStorage, Ownable {
   uint price;
   mapping(uint => bool) taken;
 
-  // event Minted(uint id, address to, uint tokenURI);
+  event Minted(uint id, address to, uint rows, uint initState);
 
   constructor() ERC721("GOLToken", "GOLT") payable {
     price = 0.0001 ether;
@@ -41,7 +41,7 @@ contract GOLToken is ERC721URIStorage, Ownable {
 
     payable(owner()).transfer(msg.value);
 
-    // emit Minted(newId, msg.sender, tokenURI);
+    emit Minted(newId, msg.sender, rows, initState);
     return newId;
   }
 
