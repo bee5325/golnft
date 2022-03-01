@@ -38,6 +38,9 @@ export default defineConfig({
           },
         },
       },
+      transitionTimingFunction: {
+        'explosion': 'cubic-bezier(0.25, 0.1, 0.46, 1.46)',
+      },
     },
   },
 })

@@ -7,6 +7,7 @@ import { Collection, Minted, TokenMeta } from './database';
 import { genGIF, genMeta } from './genGIF';
 
 const port = process.env.PORT || 3000;
+let contract: ethers.Contract;
 
 const app = express();
 app.use(express.json());
@@ -25,8 +26,12 @@ app.put("/board", async (req, res) => {
   if (pendingTransactionsFound(account, rows)) {
     let pending = getPendingTransaction(account, rows);
     let { meta, signature } = pending;
-    res.send({ initState: meta.initState, meta, signature });
-    return;
+
+    // double check if state exists
+    if (!(await contract.initStateExists(initStateToBigNum(meta.initState)))) {
+      res.send({ initState: meta.initState, meta, signature });
+      return;
+    }
   }
 
   // check if rows supported
@@ -139,10 +144,29 @@ app.listen(port, () => {
       "name": "Minted",
       "type": "event"
     },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "initState",
+          "type": "uint256"
+        }
+      ],
+      "name": "initStateExists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
   ];
   // update db for pending transactions
   let provider = ethers.getDefaultProvider(process.env.NETWORK);
-  let contract = new ethers.Contract(process.env.CONTRACT_ADDRESS!, abi, provider);
+  contract = new ethers.Contract(process.env.CONTRACT_ADDRESS!, abi, provider);
   contract.on("Minted", dbUpdatePending);
 });
 
@@ -182,6 +206,11 @@ function bigNumToInitState(bigNum: ethers.BigNumber, maxRows: number): string {
   return bigNum.toHexString().replace("0x", "").padStart(maxRows*4, "0");
 }
 
+function initStateToBigNum(initState: string): ethers.BigNumber {
+  let hexString = "0x" + initState;
+  return ethers.BigNumber.from(hexString);
+}
+
 function getPendingTransaction(account: string, rows: number): PendingTransaction {
   return pendingTransactions[`${account}.${rows}`];
 }
@@ -195,7 +224,6 @@ function addPendingTransactions(account: string, rows: number, transaction: Pend
 }
 
 async function dbUpdatePending(_: ethers.BigNumber, account: string, rows: ethers.BigNumber, initState: ethers.BigNumber) {
-  console.log("UPDATE PENDING", account, rows, initState);
   account = account.toLowerCase();
   let initStateStr = bigNumToInitState(initState, rows.toNumber());
   let transactionId = `${account}.${rows}`;

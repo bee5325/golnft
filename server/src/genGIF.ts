@@ -16,6 +16,9 @@ async function genGIF(initState: string): Promise<{
   stepCount: number,
   loop: boolean
 }> {
+  if (process.env.NODE_ENV === "development") {
+    return { gifUrl: "Some gif url", stepCount: 101, loop: true };
+  }
   const gifLoopCount = 3;
   const canvas = createCanvas(canvasWidth, canvasHeight);
   const ctx = canvas.getContext('2d');
@@ -98,6 +101,9 @@ async function genGIF(initState: string): Promise<{
 }
 
 async function genMeta(initState: string, meta: TokenMeta) {
+  if (process.env.NODE_ENV === "development") {
+    return "URL for metafile";
+  }
   console.log("Start upload metafile");
   let res = await pinata.pinJSONToIPFS(
     meta,

@@ -129,20 +129,24 @@ async function mint() {
 
 // collections
 let collections = ref([]);
-let collectionError = ref(false);
+let collectionStatus = ref<"loading" | "error" | "ready">("loading");
 watch([account, initId], async () => {
   if (!account.value) {
     return;
   }
 
+  collectionStatus.value = "loading";
   try {
+    // wait for 2s for collections to be updated in database
+    // wait is not perfect. Consider to use web socket if encountering issue
+    await new Promise((res) => setTimeout(res, 2000));
     let col = (await axios.get(`${config.SERVER_URL}/collections/${account.value}`)).data;
     if (col) {
-      collectionError.value = false;
+      collectionStatus.value = "ready";
       collections.value = col;
     }
   } catch (err) {
-    collectionError.value = true;
+    collectionStatus.value = "error";
   }
 });
 </script>
@@ -177,7 +181,9 @@ watch([account, initId], async () => {
       </div>
     </template>
     <hr class="m-4">
-    <h1 class="font-bold text-green-600 text-2xl uppercase m-2">My collections ({{collections.length}})</h1>
-    <Collections :collections="collections" :error="collectionError" />
+    <div class="min-h-screen">
+      <h1 class="font-bold text-green-600 text-2xl uppercase m-2">My collections ({{collections.length}})</h1>
+      <Collections :collections="collections" :status="collectionStatus" />
+    </div>
   </div>
 </template>
