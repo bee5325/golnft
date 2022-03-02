@@ -70,7 +70,8 @@ app.put("/board", async (req, res) => {
     ],
   }
 
-  let baseTokenUrl = await genMeta(initStateStr, meta);
+  let baseTokenUri = await genMeta(initStateStr, meta);
+  meta.baseTokenUri = baseTokenUri;
 
   // calculate signature to make sure it comes from the server itself
   let signature = await getSignature(rows, initState, account);
@@ -78,7 +79,7 @@ app.put("/board", async (req, res) => {
   // Register transaction so that DB can be updated when getting confirmation from blockchain.
   // Check dbUpdatePending() for details
   addPendingTransactions(account, rows, {
-    meta: { ...meta, baseTokenUrl },
+    meta,
     signature
   });
 

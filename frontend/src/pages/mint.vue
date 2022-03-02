@@ -72,8 +72,9 @@ async function mint() {
       {rows: rows.value, account: account.value}
     );
 
+    console.log(rows.value, initState, newMeta.baseTokenUri, signature);
     // pay and mint on chain
-    let res = await payToMint(rows.value, initState, signature);
+    let res = await payToMint(rows.value, initState, newMeta.baseTokenUri, signature);
     notification.value = {
       msg: `Transaction confirmed!\nTransaction ID: ${res.transactionHash}`,
       type: "info"
@@ -103,7 +104,11 @@ async function mint() {
           break;
         }
         default:
-          console.log(err);
+          notification.value = {
+            type: "error",
+            msg: "Unexpected error happend. Please try again later."
+          };
+          console.log(JSON.stringify(err));
           break;
       }
     } else if (err.response?.status === 400 && err.response?.data?.msg) {

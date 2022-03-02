@@ -115,7 +115,7 @@ describe("GOL Token", () => {
         .to.be.revertedWith("Init state already exists");
     });
 
-    it.only("should store token uri", async () => {
+    it("should store token uri", async () => {
       await hardhatToken.connect(addr1)
         .payToMint(ROWS, INIT_STATE, "token uri for 1", SIGNATURE, { value: MIN_PAYMENT });
 

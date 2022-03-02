@@ -117,14 +117,16 @@ export const useContract = () => {
       console.error(err);
     });
 
-  async function payToMint(rows: number, initState: string, signature: string) {
+  async function payToMint(rows: number, initState: string, tokenURI: string, signature: string) {
     let latestPrice = await price.value;
     if (!latestPrice) {
       throw new Error("Unable to get latest price");
     }
+    console.log(await signer.getAddress());
     let pay = await contract.value.payToMint(
       unref(rows),
       ethers.BigNumber.from(`0x${unref(initState)}`),
+      tokenURI,
       signature,
       { value: ethers.utils.parseEther(latestPrice) }
     );
