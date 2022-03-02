@@ -1,13 +1,25 @@
 <script setup lang="ts">
+import { Ref, ComputedRef } from "vue";
 import { useContract } from "../composables/contract";
 import axios from "axios";
 import { config } from "../config";
 
-// takes care of the contract
-let { account, connect, price: _price, payToMint } = useContract();
+let account: Ref<string> = ref("");
+let connect: () => Promise<void>;
+let payToMint: (rows: number, initState: string, tokenURI: string, signature: string) => Promise<any>;
+let _price: ComputedRef<Promise<string>>;
+
+// this is for ssg
+if (typeof useContract !== "undefined") {
+  ({ account, connect, price: _price, payToMint } = useContract());
+}
 
 let price = ref<string>("?");
 watchEffect(async () => {
+  if (!_price) {
+    return;
+  }
+
   price.value = await _price.value;
   if (price.value === "?") {
     notification.value = {
