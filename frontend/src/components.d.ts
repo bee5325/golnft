@@ -4,18 +4,13 @@
 
 declare module 'vue' {
   export interface GlobalComponents {
-    CarbonClose: typeof import('~icons/carbon/close')['default']
-    CarbonMoon: typeof import('~icons/carbon/moon')['default']
-    CarbonSun: typeof import('~icons/carbon/sun')['default']
     Collections: typeof import('./components/Collections.vue')['default']
     Counter: typeof import('./components/Counter.vue')['default']
-    EosIconsLoading: typeof import('~icons/eos-icons/loading')['default']
     Footer: typeof import('./components/Footer.vue')['default']
     GOLBoard: typeof import('./components/GOLBoard.vue')['default']
     GOLCell: typeof import('./components/GOLCell.vue')['default']
     GOLInfo: typeof import('./components/GOLInfo.vue')['default']
     Header: typeof import('./components/Header.vue')['default']
-    IcBaselineOpenInNew: typeof import('~icons/ic/baseline-open-in-new')['default']
     Notification: typeof import('./components/Notification.vue')['default']
     README: typeof import('./components/README.md')['default']
   }

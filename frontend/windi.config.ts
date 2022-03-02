@@ -15,25 +15,25 @@ export default defineConfig({
       typography: {
         DEFAULT: {
           css: {
-            maxWidth: '65ch',
+            maxWidth: '1500px',
             color: 'inherit',
             a: {
-              'color': 'inherit',
+              'color': colors.teal[500],
               'opacity': 0.75,
               'fontWeight': '500',
               'textDecoration': 'underline',
               '&:hover': {
                 opacity: 1,
-                color: colors.teal[600],
+                color: colors.teal[700],
               },
             },
             b: { color: 'inherit' },
             strong: { color: 'inherit' },
             em: { color: 'inherit' },
-            h1: { color: 'inherit' },
-            h2: { color: 'inherit' },
-            h3: { color: 'inherit' },
-            h4: { color: 'inherit' },
+            h1: { color: "#059669" },
+            h2: { color: "#059669" },
+            h3: { color: "#059669" },
+            h4: { color: "#059669" },
             code: { color: 'inherit' },
           },
         },

@@ -1,4 +1,5 @@
 @import './markdown.css';
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&family=Roboto+Slab:wght@700&display=swap');
 
 html,
 body,
@@ -6,10 +7,14 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
+  font-family: 'Open Sans', sans-serif;
 }
 
-html.dark {
-  background: #222222;
+h1, h2, h3, h4, h5, h6, h7 {
+  font-family: 'Roboto Slab', serif;
+  font-weight: bold;
+  font-size: 2.67em;
+  @apply text-green-600 mb-5;
 }
 
 #nprogress {

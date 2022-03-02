@@ -39,7 +39,7 @@ watchEffect(() => {
 
 <template>
   <div>
-    <h1 class="font-bold text-green-600 text-2xl uppercase m-2">Explore</h1>
+    <h1 class="uppercase">Explore</h1>
     <div class="w-11/12 m-auto grid grid-cols-3 items-center">
       <GOLBoard
         class="col-start-2"

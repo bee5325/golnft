@@ -161,7 +161,7 @@ watch([account, initId], async () => {
 <template>
   <div>
     <Notification :type="notification.type" :msg="notification.msg" @clearNotification="clearNotification" />
-    <h1 class="font-bold text-green-600 text-2xl uppercase m-2">Mint</h1>
+    <h1 class="uppercase">Mint</h1>
     <button v-if="!account" class="btn" :disabled="connecting" @click="connectWallet">Connect your wallet</button>
     <template v-else>
       <p>Account <span class="font-bold">{{account}}</span></p>
