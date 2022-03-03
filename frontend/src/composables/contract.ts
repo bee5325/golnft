@@ -12,7 +12,7 @@ interface Contract {
 
 let useContract: () => Contract;
 
-if (window && window.ethereum) {
+if (typeof window !== "undefined" && window.ethereum) {
   // types
   let ethereum = window.ethereum;
   interface ProviderRpcError extends Error {
