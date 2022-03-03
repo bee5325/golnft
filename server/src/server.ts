@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import cors from 'cors';
 import { Collection, Minted, TokenMeta } from './database';
 import { genGIF, genMeta } from './genGIF';
+import nodemailer from 'nodemailer';
 
 const port = process.env.PORT || 3000;
 let contract: ethers.Contract;
@@ -169,6 +170,28 @@ app.listen(port, () => {
   let provider = ethers.getDefaultProvider(process.env.NETWORK);
   contract = new ethers.Contract(process.env.CONTRACT_ADDRESS!, abi, provider);
   contract.on("Minted", dbUpdatePending);
+});
+
+app.post("/feedback", (req, res) => {
+  let { email, feedback } = req.body;
+  let transporter = nodemailer.createTransport({
+    service: process.env.MAIL_PROVIDER,
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
+    }
+  });
+  try {
+    transporter.sendMail({
+      from: process.env.MAIL_USER,
+      to: process.env.MAIL_USER,
+      subject: "You got a new feedback",
+      text: `Feedback from ${email}:\n${feedback}`,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+  res.send("OK");
 });
 
 /**

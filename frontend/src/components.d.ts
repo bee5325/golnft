@@ -6,6 +6,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     CarbonClose: typeof import('~icons/carbon/close')['default']
     Collections: typeof import('./components/Collections.vue')['default']
+    ContactForm: typeof import('./components/ContactForm.vue')['default']
     Counter: typeof import('./components/Counter.vue')['default']
     EosIconsLoading: typeof import('~icons/eos-icons/loading')['default']
     Footer: typeof import('./components/Footer.vue')['default']

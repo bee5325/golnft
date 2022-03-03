@@ -23,10 +23,19 @@ rules.
 For now, the minting can only be done on chain Arbitrum. You can choose to mint the board
 with rows between 3 and 16. The price will be the same regardless of the number of rows.
 
+The minting is done randomly on the fly. One thing I realized is that it is very hard to have
+randomness done on the chain, so the generation of boards are done off the chain, but some
+tricks are used to prevent off chain generation to be exploit. If you saw loop holes, feel free
+to contact me.
+
 You can check your minted boards under page [mint](/mint).
 
 ## Contact me
 
-For any feedback / request, feel free to contact me through email yb.bee5325@gmail.com.
+For any feedback / request, feel free to contact me using this form:
+
+<ContactForm />
+
+You can also contact me through email yb.bee5325@gmail.com.
 
 I am also open for any project / job offer.
