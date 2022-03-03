@@ -21,7 +21,8 @@
     "prism-theme-vars": "^0.2.2",
     "vue": "^3.2.29",
     "vue-demi": "^0.12.1",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "workbox-window": "^6.5.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.16.0",
