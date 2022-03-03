@@ -8,15 +8,18 @@ let account: Ref<string> = ref("");
 let connect: () => Promise<void>;
 let payToMint: (rows: number, initState: string, tokenURI: string, signature: string) => Promise<any>;
 let _price: ComputedRef<Promise<string>>;
+let walletDetected = ref(false);
 
-// this is for ssg
+// Ignored for SSG
 if (typeof useContract !== "undefined") {
   ({ account, connect, price: _price, payToMint } = useContract());
+  walletDetected.value = true;
 }
 
+// Auto update price when connected
 let price = ref<string>("?");
 watchEffect(async () => {
-  if (!_price) {
+  if (!_price || !account.value) {
     return;
   }
 
@@ -168,13 +171,27 @@ watch([account, initId], async () => {
     collectionStatus.value = "error";
   }
 });
+
+onMounted(() => {
+  // for no wallet
+  if (!walletDetected.value) {
+    notification.value = {
+      type: "error",
+      msg: "No wallet detected. Please install a wallet to continue",
+    }
+  }
+
+  if (!walletDetected.value || !account.value) {
+    collectionStatus.value = "ready";
+  }
+});
 </script>
 
 <template>
   <div>
     <Notification :type="notification.type" :msg="notification.msg" @clearNotification="clearNotification" />
     <h1 class="uppercase">Mint</h1>
-    <button v-if="!account" class="btn" :disabled="connecting" @click="connectWallet">Connect your wallet</button>
+    <button v-if="!account" class="btn" :disabled="connecting || !walletDetected" @click="connectWallet">Connect your wallet</button>
     <template v-else>
       <p>Account <span class="font-bold">{{account}}</span></p>
       <div class="w-390px m-auto">

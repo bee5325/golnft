@@ -1,10 +1,18 @@
+import { Ref, ComputedRef } from "vue";
 import { ethers } from "ethers";
 import { config } from "../config";
 
 declare let window: any;
-let useContract;
+interface Contract {
+  account: Ref<string>,
+  connect: () => Promise<void>,
+  payToMint: (rows: number, initState: string, tokenURI: string, signature: string) => Promise<any>,
+  price: ComputedRef<Promise<string>>,
+}
 
-if (typeof window !== "undefined") {
+let useContract: () => Contract;
+
+if (window && window.ethereum) {
   // types
   let ethereum = window.ethereum;
   interface ProviderRpcError extends Error {
