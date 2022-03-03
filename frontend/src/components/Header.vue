@@ -1,8 +1,8 @@
 <template>
-  <nav class="text-xl m-0 mb-5 w-full bg-green-600 text-gray-50 flex items-center justify-between p-5">
-    <span class="grow mr-auto">Conway's Game of Life NFT</span>
+  <nav class="text-xl m-0 mb-5 w-full bg-green-600 text-gray-50 flex items-center justify-between p-5 flex-wrap">
+    <span class="w-full text-left md:w-auto md:grow md:mr-auto">Conway's Game of Life NFT</span>
 
-    <router-link class="icon-btn mx-2" to="/" title="Home">
+    <router-link class="icon-btn mx-2 ml-auto md:ml-0" to="/" title="Home">
       Home
     </router-link>
 

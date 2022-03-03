@@ -16,26 +16,30 @@ defineProps({
 });
 
 let hovered = ref<string>("");
+let hoveredLeft = ref(0);
 let hoveredMeta = ref(null);
 let loading = ref(false);
 
-watch(hovered, async (initState: string) => {
+async function setHovered(initState: string, ref: HTMLElement | null) {
   hovered.value = initState;
   loading.value = true;
 
-  if (initState === '') {
+  if (initState === '' || ref === null) {
     hoveredMeta.value = null;
     loading.value = false;
     return;
   }
 
+  let rect = ref.getBoundingClientRect();
+  hoveredLeft.value = rect.left;
   hoveredMeta.value = (await axios.get(`${config.SERVER_URL}/board/${initState}`)).data;
   loading.value = false;
-});
+}
+
 </script>
 
 <template>
-  <div class="flex justify-center items-center max-w-1500px my-5 mx-auto flex-wrap">
+  <div class="flex justify-center items-center max-w-1500px my-5 mx-auto flex-wrap pb-300px">
     <p v-if="status === 'error'" class="mt-5 text-lg">Error showing your collections. Please try again later.</p>
     <transition-group
       v-for="col of collections"
@@ -49,9 +53,9 @@ watch(hovered, async (initState: string) => {
       <div
         :key="col"
         class="relative inline-block"
-        @mouseover="hovered = col"
-        @mouseleave="hovered = ''"
-        @touchend="if(hovered) hovered = '';"
+        @mouseover="setHovered(col, $event.target as HTMLElement)"
+        @mouseleave="setHovered('', null)"
+        @touchend="if(hovered) setHovered('', null); else setHovered(col, $event.target as HTMLElement);"
       >
         <GOLBoard
           :toggle="false"
@@ -70,7 +74,8 @@ watch(hovered, async (initState: string) => {
             v-if="hovered === col"
             :meta="hoveredMeta"
             :loading="loading"
-            class="absolute top-full left-1/2 transform -translate-x-1/2 text-xs w-lg sm:w-screen"
+            :left="hoveredLeft"
+            class="absolute top-full left-0 text-xs w-lg"
           />
         </transition>
       </div>

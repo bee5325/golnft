@@ -17,18 +17,43 @@ interface TokenMeta {
 interface GolInfoProps {
   meta: TokenMeta | null;
   loading: boolean;
+  left?: number,
 }
 
-withDefaults(
+let props = withDefaults(
   defineProps<GolInfoProps>(), 
   {
     loading: false,
   }
 );
+
+let popup = ref(null);
+const { width: windowWidth } = useWindowSize();
+const padding = 40;
+
+let width = computed(() => {
+  let maxWidth = 550;
+  return Math.min(maxWidth, windowWidth.value - padding);
+});
+
+const correction = computed(() => {
+  if (!props.left) {
+    return 0;
+  }
+
+  if (props.left + width.value > windowWidth.value - padding/2) {
+    return props.left + width.value - (windowWidth.value - padding/2);
+  }
+  return 0;
+});
 </script>
 
 <template>
-  <div class="max-w-xl inline-block p-4 rounded-md border-1 border-solid border-gray-400 bg-white z-1">
+  <div
+    class="transform translate-x-0 inline-block p-4 rounded-md border-1 border-solid border-gray-400 bg-white z-1"
+    :class="`-translate-x-[${correction}px] max-w-[${width}px]`"
+    ref="popup"
+  >
     <eos-icons-loading v-if="loading" class="text-green-900 w-6 h-6 ml-2" />
     <transition
       v-else-if="meta"

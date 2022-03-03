@@ -40,9 +40,9 @@ watchEffect(() => {
 <template>
   <div>
     <h1 class="uppercase">Explore</h1>
-    <div class="w-11/12 m-auto grid grid-cols-3 items-center">
+    <div class="w-11/12 m-auto grid grid-cols-1 md:grid-cols-3 items-center pb-300px">
       <GOLBoard
-        class="col-start-2"
+        class="md:col-start-2"
         :initId="initId"
         @running="(_run) => running = _run"
         @init-id-changed="(_id) => initId = _id"
@@ -50,7 +50,7 @@ watchEffect(() => {
         @loop-changed="(_loop) => isLoop = _loop ? 'Yes' : 'No'"
       />
       <div class="inline-block w-full border-1 rounded-md border-solid border-gray-500 p-5">
-        <label>Number of rows</label>
+        <label>Number of rows (3 - 16)</label>
         <input type="number" v-model="maxRows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" @change="reset" />
         <p>
           ID:

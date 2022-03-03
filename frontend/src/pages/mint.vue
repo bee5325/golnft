@@ -16,6 +16,10 @@ if (typeof useContract !== "undefined") {
   walletDetected.value = true;
 }
 
+function truncate(account: string) {
+  return `${account.substring(0, 7)}...${account.substring(account.length-5)}`;
+}
+
 // Auto update price when connected
 let price = ref<string>("?");
 watchEffect(async () => {
@@ -50,12 +54,21 @@ let meta = ref(null);
 let rows = ref(3);
 let mintedCount = ref(0);
 watch([rows, initId], async () => {
+  if (rows.value < 3 || rows.value > 16) {
+    return;
+  }
   try {
     let resp = await axios.get(`${config.SERVER_URL}/minted/${rows.value}`);
     mintedCount.value = resp.data.rows;
   } catch (err) {
     console.log(err);
   }
+});
+let combinations = computed(() => {
+  if (rows.value < 3 || rows.value > 16) {
+    return "N/A";
+  }
+  return Math.pow(2,rows.value*rows.value)
 });
 
 // contract interaction
@@ -71,6 +84,9 @@ async function connectWallet() {
 }
 
 watch(rows, () => {
+  if (rows.value < 3 || rows.value > 16) {
+    return;
+  }
   if (initId.value.includes("?")) {
     initId.value = "".padStart(rows.value*4, "?");
   }
@@ -193,20 +209,20 @@ onMounted(() => {
     <h1 class="uppercase">Mint</h1>
     <button v-if="!account" class="btn" :disabled="connecting || !walletDetected" @click="connectWallet">Connect your wallet</button>
     <template v-else>
-      <p>Account <span class="font-bold">{{account}}</span></p>
-      <div class="w-390px m-auto">
-        <label>Number of rows</label>
+      <p>Account <span class="font-bold">{{truncate(account)}}</span></p>
+      <div class="m-auto">
+        <label>Number of rows (3 - 16)</label>
         <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
       </div>
-      <p>(<span class="font-bold">{{mintedCount}}</span> of {{Math.pow(2,rows*rows)}} minted)</p>
+      <p>(<span class="font-bold">{{mintedCount}}</span> of {{combinations}} minted)</p>
       <button class="btn relative" :disabled="minting || price === '?'" @click="mint">
         Mint for {{ price }} ETH
         <eos-icons-loading v-if="minting" class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2" />
       </button>
-      <p class="font-bold">{{initId}}</p>
-      <div class="grid grid-cols-3 items-center">
+      <p class="font-bold break-words px-3">{{initId}}</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 items-center">
         <GOLBoard
-          class="col-start-2"
+          class="md:col-start-2"
           :width="500"
           :height="500"
           :toggle="false"
