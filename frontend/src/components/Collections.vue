@@ -19,6 +19,7 @@ let hovered = ref<string>("");
 let hoveredLeft = ref(0);
 let hoveredMeta = ref(null);
 let loading = ref(false);
+let cache: Record<string, any> = {};
 
 async function setHovered(initState: string, ref: HTMLElement | null) {
   hovered.value = initState;
@@ -32,7 +33,12 @@ async function setHovered(initState: string, ref: HTMLElement | null) {
 
   let rect = ref.getBoundingClientRect();
   hoveredLeft.value = rect.left;
-  hoveredMeta.value = (await axios.get(`${config.SERVER_URL}/board/${initState}`)).data;
+  if (cache[initState]) {
+    hoveredMeta.value = cache[initState];
+  } else {
+    hoveredMeta.value = (await axios.get(`${config.SERVER_URL}/board/${initState}`)).data;
+    cache[initState] = hoveredMeta.value;
+  }
   loading.value = false;
 }
 
