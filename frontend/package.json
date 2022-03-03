@@ -21,8 +21,7 @@
     "prism-theme-vars": "^0.2.2",
     "vue": "^3.2.29",
     "vue-demi": "^0.12.1",
-    "vue-router": "^4.0.12",
-    "workbox-window": "^6.5.0"
+    "vue-router": "^4.0.12"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.16.0",
@@ -55,6 +54,7 @@
     "vite-plugin-windicss": "^1.7.1",
     "vite-ssg": "^0.17.7",
     "vitest": "0.1.27",
-    "vue-tsc": "^0.31.1"
+    "vue-tsc": "^0.31.1",
+    "workbox-window": "^6.5.0"
   }
 }

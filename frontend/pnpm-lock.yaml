@@ -55,7 +55,6 @@ dependencies:
   vue: 3.2.29
   vue-demi: 0.12.1_vue@3.2.29
   vue-router: 4.0.12_vue@3.2.29
-  workbox-window: 6.5.0
 
 devDependencies:
   '@antfu/eslint-config': 0.16.0_eslint@8.7.0+typescript@4.5.5
@@ -89,6 +88,7 @@ devDependencies:
   vite-ssg: 0.17.7_1ede6668370ad42aad1df87e2fa73e29
   vitest: 0.1.27
   vue-tsc: 0.31.1_typescript@4.5.5
+  workbox-window: 6.5.0
 
 packages:
 
@@ -1947,6 +1947,7 @@ packages:
 
   /@types/trusted-types/2.0.2:
     resolution: {integrity: sha512-F5DIZ36YVLE+PN+Zwws4kJogq47hNgX3Nx6WyDJ3kcplxyke3XIzB8uK5n/Lpm1HBsbGzd6nmGehL8cPekP+Tg==}
+    dev: true
 
   /@types/yauzl/2.9.2:
     resolution: {integrity: sha512-8uALY5LTvSuHgloDVUvWP3pIauILm+8/0pDMokuDYIoNsOkSwd5AiHBTSEJjKTDcZr5z8UpgOWZkxBF4iJftoA==}
@@ -7634,7 +7635,7 @@ packages:
 
   /workbox-core/6.5.0:
     resolution: {integrity: sha512-5SPwNipUzYBhrneLVT02JFA0fw3LG82jFAN/G2NzxkIW10t4MVZuML2nU94bbkgjq25u0fkY8+4JXzMfHgxEWQ==}
-    dev: false
+    dev: true
 
   /workbox-expiration/6.4.2:
     resolution: {integrity: sha512-0hbpBj0tDnW+DZOUmwZqntB/8xrXOgO34i7s00Si/VlFJvvpRKg1leXdHHU8ykoSBd6+F2KDcMP3swoCi5guLw==}
@@ -7718,7 +7719,7 @@ packages:
     dependencies:
       '@types/trusted-types': 2.0.2
       workbox-core: 6.5.0
-    dev: false
+    dev: true
 
   /wrap-ansi/6.2.0:
     resolution: {integrity: sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA==}
