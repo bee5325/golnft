@@ -13,6 +13,7 @@ interface TokenMeta {
   externalUrl: UrlString;
   attributes: Array<Traits>;
   baseTokenUrl?: UrlString;
+  tokenId?: number;
 }
 interface GolInfoProps {
   meta: TokenMeta | null;
@@ -70,6 +71,10 @@ const correction = computed(() => {
         <tr>
           <td class="py-2"><label class="mr-2 whitespace-nowrap">Created on:</label></td>
           <td class="py-2"><span class="font-bold">{{new Date(meta.date).toDateString()}}</span></td>
+        </tr>
+        <tr>
+          <td class="py-2"><label class="mr-2 whitespace-nowrap">Token ID:</label></td>
+          <td class="py-2"><span class="font-bold break-all">{{meta.tokenId}}</span></td>
         </tr>
         <tr>
           <td class="py-2"><label class="mr-2 whitespace-nowrap">Init state:</label></td>

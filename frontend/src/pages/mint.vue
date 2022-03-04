@@ -7,12 +7,13 @@ import { config } from "../config";
 let account: Ref<string> = ref("");
 let connect: () => Promise<void>;
 let payToMint: (rows: number, initState: string, tokenURI: string, signature: string) => Promise<any>;
+let tokenIdOf: (rows: number, initState: string) => Promise<number>;
 let _price: ComputedRef<Promise<string>>;
 let walletDetected = ref(false);
 
 // Ignored for SSG
 if (typeof useContract !== "undefined") {
-  ({ account, connect, price: _price, payToMint } = useContract());
+  ({ account, connect, price: _price, payToMint, tokenIdOf } = useContract());
   walletDetected.value = true;
 }
 
@@ -35,6 +36,8 @@ watchEffect(async () => {
         Error getting latest price for minting. Make sure you are connected to the correct network (Arbitrum).\n
         Contact admin if the issue persists.`
     }
+  } else {
+    clearNotification();
   }
 });
 
@@ -53,17 +56,24 @@ let initId = ref<string>("????????????");
 let meta = ref(null);
 let rows = ref(3);
 let mintedCount = ref(0);
+onMounted(async () => {
+  mintedCount.value = await getMintedCount(rows.value);
+});
 watch([rows, initId], async () => {
   if (rows.value < 3 || rows.value > 16) {
     return;
   }
+  mintedCount.value = await getMintedCount(rows.value);
+});
+async function getMintedCount(rows: number): Promise<number> {
   try {
-    let resp = await axios.get(`${config.SERVER_URL}/minted/${rows.value}`);
-    mintedCount.value = resp.data.rows;
+    let resp = await axios.get(`${config.SERVER_URL}/minted/${rows}`);
+    return resp.data.rows;
   } catch (err) {
     console.log(err);
+    return 0;
   }
-});
+}
 let combinations = computed(() => {
   if (rows.value < 3 || rows.value > 16) {
     return "N/A";
@@ -103,7 +113,6 @@ async function mint() {
       {rows: rows.value, account: account.value}
     );
 
-    console.log(rows.value, initState, newMeta.baseTokenUri, signature);
     // pay and mint on chain
     let res = await payToMint(rows.value, initState, newMeta.baseTokenUri, signature);
     notification.value = {
@@ -113,6 +122,7 @@ async function mint() {
 
     // display
     initId.value = initState;
+    newMeta.tokenId = await tokenIdOf(rows.value, initState);
     meta.value = newMeta;
   } catch (err: any) {
     if (err.code) {

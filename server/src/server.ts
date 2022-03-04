@@ -29,7 +29,7 @@ app.put("/board", async (req, res) => {
     let { meta, signature } = pending;
 
     // double check if state exists
-    if (!(await contract.initStateExists(initStateToBigNum(meta.initState)))) {
+    if (!(await contract.initStateExists(rows, ethers.BigNumber.from(`0x${meta.initState}`)))) {
       res.send({ initState: meta.initState, meta, signature });
       return;
     }
@@ -43,7 +43,10 @@ app.put("/board", async (req, res) => {
 
   // check if all taken
   let mintedDocs = await Minted.find({ rows }).select('initState');
-  let minted = mintedDocs.map((m) => m.initState);
+  let minted = [
+    ...mintedDocs.map((m) => m.initState),
+    ...getPendingTransactionsForRows(rows)
+  ];
   if (minted.length === Math.pow(2, rows*rows)) {
     res.status(400).send({ msg: `All possibilities were already minted for ${rows} rows` });
     return;
@@ -150,6 +153,11 @@ app.listen(port, () => {
       "inputs": [
         {
           "internalType": "uint256",
+          "name": "rows",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
           "name": "initState",
           "type": "uint256"
         }
@@ -230,13 +238,13 @@ function bigNumToInitState(bigNum: ethers.BigNumber, maxRows: number): string {
   return bigNum.toHexString().replace("0x", "").padStart(maxRows*4, "0");
 }
 
-function initStateToBigNum(initState: string): ethers.BigNumber {
-  let hexString = "0x" + initState;
-  return ethers.BigNumber.from(hexString);
-}
-
 function getPendingTransaction(account: string, rows: number): PendingTransaction {
   return pendingTransactions[`${account}.${rows}`];
+}
+
+function getPendingTransactionsForRows(rows: number): string[] {
+  let pendingForRows = Object.values(pendingTransactions).filter((pending) => pending.meta.rows === rows);
+  return pendingForRows.map((pending) => pending.meta.initState);
 }
 
 function pendingTransactionsFound(account: string, rows: number): boolean {
@@ -247,7 +255,7 @@ function addPendingTransactions(account: string, rows: number, transaction: Pend
   pendingTransactions[`${account}.${rows}`] = transaction;
 }
 
-async function dbUpdatePending(_: ethers.BigNumber, account: string, rows: ethers.BigNumber, initState: ethers.BigNumber) {
+async function dbUpdatePending(tokenId: ethers.BigNumber, account: string, rows: ethers.BigNumber, initState: ethers.BigNumber) {
   account = account.toLowerCase();
   let initStateStr = bigNumToInitState(initState, rows.toNumber());
   let transactionId = `${account}.${rows}`;
@@ -268,7 +276,8 @@ async function dbUpdatePending(_: ethers.BigNumber, account: string, rows: ether
   await Collection.replaceOne({ account }, newCol, { upsert: true });
 
   // update database (minted)
-  let newMinted = new Minted(transaction.meta);
+  let meta = { ...transaction.meta, tokenId };
+  let newMinted = new Minted(meta);
   await newMinted.save();
 
   delete pendingTransactions[transactionId];

@@ -4,10 +4,11 @@ import { config } from "../config";
 
 declare let window: any;
 interface Contract {
-  account: Ref<string>,
-  connect: () => Promise<void>,
-  payToMint: (rows: number, initState: string, tokenURI: string, signature: string) => Promise<any>,
-  price: ComputedRef<Promise<string>>,
+  account: Ref<string>;
+  connect: () => Promise<void>;
+  payToMint: (rows: number, initState: string, tokenURI: string, signature: string) => Promise<any>;
+  price: ComputedRef<Promise<string>>;
+  tokenIdOf: (rows: number, initState: string) => Promise<number>;
 }
 
 let useContract: () => Contract;
@@ -73,16 +74,21 @@ if (typeof window !== "undefined" && window.ethereum) {
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "tokenId",
+          "name": "rows",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "initState",
           "type": "uint256"
         }
       ],
-      "name": "tokenURI",
+      "name": "tokenIdOf",
       "outputs": [
         {
-          "internalType": "string",
+          "internalType": "uint256",
           "name": "",
-          "type": "string"
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -133,7 +139,6 @@ if (typeof window !== "undefined" && window.ethereum) {
       if (!latestPrice) {
         throw new Error("Unable to get latest price");
       }
-      console.log(await signer.getAddress());
       let pay = await contract.value.payToMint(
         unref(rows),
         ethers.BigNumber.from(`0x${unref(initState)}`),
@@ -152,11 +157,21 @@ if (typeof window !== "undefined" && window.ethereum) {
       }
     });
 
+    async function tokenIdOf(rows: number, initState: string) {
+      try {
+        return await contract.value.tokenIdOf(rows, ethers.BigNumber.from(`0x${initState}`));
+      } catch (err) {
+        console.log(err);
+        return "?";
+      }
+    }
+
     return {
       account: currentAccount,
       connect,
       payToMint,
       price,
+      tokenIdOf,
     };
   }
 }

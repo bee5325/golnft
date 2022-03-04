@@ -16,9 +16,6 @@ async function genGIF(initState: string): Promise<{
   stepCount: number,
   loop: boolean
 }> {
-  if (process.env.NODE_ENV === "development") {
-    return { gifUrl: "Some gif url", stepCount: 101, loop: true };
-  }
   const gifLoopCount = 3;
   const canvas = createCanvas(canvasWidth, canvasHeight);
   const ctx = canvas.getContext('2d');
@@ -94,9 +91,17 @@ async function genGIF(initState: string): Promise<{
 
   await fileGenerated(filePath);
   console.log("Done generate gif");
+
+  if (process.env.NODE_ENV === "development") {
+    fs.rmSync(filePath);
+    return { gifUrl: "Some gif url", stepCount, loop };
+  }
+
   console.log("Start upload gif");
   let gifUrl = await uploadIPFS(filePath);
   console.log("Done upload gif");
+
+  fs.rmSync(filePath);
   return { gifUrl, stepCount, loop };
 }
 

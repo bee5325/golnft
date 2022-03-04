@@ -28,6 +28,7 @@ interface TokenMeta {
   externalUrl: UrlString;
   attributes: Array<Traits>;
   baseTokenUri?: UrlString;
+  tokenId?: number;
 }
 const mintedSchema = new mongoose.Schema<TokenMeta>({
   name: { type: String, required: true },
@@ -39,6 +40,7 @@ const mintedSchema = new mongoose.Schema<TokenMeta>({
   externalUrl: { type: String, required: true },
   attributes: { type: [{}], required: true },
   baseTokenUri: { type: String, required: true },
+  tokenId: { type: Number, required: true },
 });
 const Minted = mongoose.model<TokenMeta>("Minted", mintedSchema);
 
