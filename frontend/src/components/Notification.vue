@@ -19,7 +19,7 @@ defineProps({
       class="p-5 w-11/12 mt-5 flex max-w-4xl justify-between absolute top-0 left-1/2 transform -translate-x-1/2"
       :class="{'bg-red-200': type === 'error', 'bg-orange-200': type === 'info'}"
     >
-      <p class="m-auto whitespace-pre-line">{{msg}}</p>
+      <p class="basis-11/12 m-auto break-all whitespace-pre-line">{{msg}}</p>
       <carbon-close @click="$emit('clearNotification')" class="cursor-pointer" />
     </div>
   </Transition>
