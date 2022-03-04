@@ -2,6 +2,8 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 let owner, addr1, addr2;
+const MIN_PAYMENT = Math.pow(10, 14); // 0.0001 ether
+
 // helper functions
 async function getSignature(rows, initState, address) {
   const abiCoder = ethers.utils.defaultAbiCoder;
@@ -33,7 +35,6 @@ describe("GOL Token", () => {
   });
 
   describe("Pay to mint", () => {
-    const MIN_PAYMENT = Math.pow(10, 14); // 0.0001 ether
     const ROWS = 5;
     const INIT_STATE = "00000015000400060003";
     const TOKEN_URI = "tokenUri";
@@ -120,6 +121,30 @@ describe("GOL Token", () => {
         .payToMint(ROWS, INIT_STATE, "token uri for 1", SIGNATURE, { value: MIN_PAYMENT });
 
       expect(await hardhatToken.tokenURI(1)).to.be.eq("token uri for 1");
+    });
+  });
+
+  describe("tokenIdOf", () => {
+    it("should return correct token id for given rows and init state", async () => {
+      const Token = await ethers.getContractFactory("GOLToken");
+      hardhatToken = await Token.deploy();
+
+      // first mint 2 tokens with same init state hex but different row
+      let rows = 3;
+      let initState = "00000015000400060003";
+      let signature = getSignature(rows, initState, addr1.address);
+      await hardhatToken.connect(addr1)
+        .payToMint(rows, initState, "token uri", signature, { value: MIN_PAYMENT });
+
+      rows = 4;
+      initState = "000000000015000400060003";
+      signature = getSignature(rows, initState, addr1.address);
+      await hardhatToken.connect(addr1)
+        .payToMint(rows, initState, "token uri", signature, { value: MIN_PAYMENT });
+
+      // token id should be correct according to number of rows
+      expect(await hardhatToken.tokenIdOf(3, "000000000015000400060003")).to.be.eq(1);
+      expect(await hardhatToken.tokenIdOf(4, "000000000015000400060003")).to.be.eq(2);
     });
   });
 
