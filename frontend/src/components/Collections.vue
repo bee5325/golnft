@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import axios from "axios";
-import { config } from "../config";
 
 defineProps({
   collections: {
@@ -36,7 +35,7 @@ async function setHovered(initState: string, ref: HTMLElement | null) {
   if (cache[initState]) {
     hoveredMeta.value = cache[initState];
   } else {
-    hoveredMeta.value = (await axios.get(`${config.SERVER_URL}/board/${initState}`)).data;
+    hoveredMeta.value = (await axios.get(`${import.meta.env.SERVER_URL}/board/${initState}`)).data;
     cache[initState] = hoveredMeta.value;
   }
   loading.value = false;

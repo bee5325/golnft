@@ -1,6 +1,5 @@
 import { Ref, ComputedRef } from "vue";
 import { ethers } from "ethers";
-import { config } from "../config";
 
 declare let window: any;
 interface Contract {
@@ -100,7 +99,7 @@ if (typeof window !== "undefined" && window.ethereum) {
     let currentAccount = ref<string>("");
     let provider = new ethers.providers.Web3Provider(window.ethereum);
     let signer = provider.getSigner();
-    let contractAddress = config.CONTRACT_ADDRESS;
+    let contractAddress = import.meta.env.CONTRACT_ADDRESS;
     let contract = ref(new ethers.Contract(
       contractAddress,
       contractAbi,

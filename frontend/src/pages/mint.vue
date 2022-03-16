@@ -2,7 +2,6 @@
 import { Ref, ComputedRef } from "vue";
 import { useContract } from "../composables/contract";
 import axios from "axios";
-import { config } from "../config";
 
 let account: Ref<string> = ref("");
 let connect: () => Promise<void>;
@@ -67,7 +66,7 @@ watch([rows, initId], async () => {
 });
 async function getMintedCount(rows: number): Promise<number> {
   try {
-    let resp = await axios.get(`${config.SERVER_URL}/minted/${rows}`);
+    let resp = await axios.get(`${import.meta.env.SERVER_URL}/minted/${rows}`);
     return resp.data.rows;
   } catch (err) {
     console.log(err);
@@ -109,7 +108,7 @@ async function mint() {
   try {
     // first get init state from server
     let { data: { initState, meta: newMeta, signature } } = await axios.put(
-      `${config.SERVER_URL}/board`,
+      `${import.meta.env.SERVER_URL}/board`,
       {rows: rows.value, account: account.value}
     );
 
@@ -188,7 +187,7 @@ watch([account, initId], async () => {
     // wait for 2s for collections to be updated in database
     // wait is not perfect. Consider to use web socket if encountering issue
     await new Promise((res) => setTimeout(res, 2000));
-    let col = (await axios.get(`${config.SERVER_URL}/collections/${account.value}`)).data;
+    let col = (await axios.get(`${import.meta.env.SERVER_URL}/collections/${account.value}`)).data;
     if (col) {
       collectionStatus.value = "ready";
       collections.value = col;

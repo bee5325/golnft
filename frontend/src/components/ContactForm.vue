@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { config } from "../config";
 import axios from "axios";
 
 let feedback = ref("");
@@ -7,7 +6,7 @@ let email = ref("");
 let submited = ref(false);
 
 async function submit() {
-  axios.post(`${config.SERVER_URL}/feedback`, { feedback: feedback.value, email: email.value });
+  axios.post(`${import.meta.env.SERVER_URL}/feedback`, { feedback: feedback.value, email: email.value });
   submited.value = true;
 }
 </script>

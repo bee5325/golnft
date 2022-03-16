@@ -17,7 +17,6 @@
     "axios": "^0.26.0",
     "ethers": "^5.5.4",
     "nprogress": "^0.2.0",
-    "pinia": "^2.0.9",
     "prism-theme-vars": "^0.2.2",
     "vue": "^3.2.29",
     "vue-demi": "^0.12.1",
