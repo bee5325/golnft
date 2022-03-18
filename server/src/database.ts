@@ -45,9 +45,13 @@ const mintedSchema = new mongoose.Schema<TokenMeta>({
 const Minted = mongoose.model<TokenMeta>("Minted", mintedSchema);
 
 // setup
-if (!process.env.DB_URL) {
+let dbUrl = process.env.NODE_ENV === 'development'
+    ? process.env.DB_URL_TEST
+    : process.env.DB_URL; 
+
+if (!dbUrl) {
   throw new Error("DB_URL not set in environment variables");
 }
-mongoose.connect(process.env.DB_URL);
+mongoose.connect(dbUrl);
 
 export { Collection, Minted, TokenMeta };

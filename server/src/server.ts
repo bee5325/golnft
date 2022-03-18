@@ -182,19 +182,19 @@ app.listen(port, () => {
 
 app.post("/feedback", (req, res) => {
   let { email, feedback } = req.body;
-  let transporter = nodemailer.createTransport({
-    service: process.env.MAIL_PROVIDER,
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
-    }
-  });
   try {
+    let transporter = nodemailer.createTransport({
+      service: process.env.MAIL_PROVIDER,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      }
+    });
     transporter.sendMail({
       from: process.env.MAIL_USER,
       to: process.env.MAIL_USER,
       subject: "You got a new feedback",
-      text: `Feedback from ${email}:\n${feedback}`,
+      text: `Feedback from ${email}:\n\n${feedback}`,
     });
   } catch (err) {
     console.log(err);

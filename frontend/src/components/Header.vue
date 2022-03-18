@@ -10,7 +10,7 @@
       Mint
     </router-link>
 
-    <router-link class="icon-btn mx-2" to="/about" title="about">
+    <router-link class="icon-btn mx-2" to="/about" title="About">
       About
     </router-link>
   </nav>

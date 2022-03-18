@@ -1,7 +1,3 @@
----
-title: About
----
-
 # About
 
 ## The project
@@ -29,6 +25,19 @@ tricks are used to prevent off chain generation to be exploit. If you saw loop h
 to contact me.
 
 You can check your minted boards under page [mint](/mint).
+
+## Why Arbitrum
+
+Well the honest answer is because it is cheap. I just can't afford the high gas fee required
+to deploy the contract on Ethereum mainnet. However, I am staying optimistic about the future
+of Arbitrum, as it allows interaction with Ethereum mainnet at much lower price, and the
+compatibility with EVM is important in my opinion.
+
+If the request is high enough, I may try to implement some kind of bridge to transfer the tokens
+to other chain. Please let me know if you have any opinion on that.
+
+As for my future projects, I MAY consider to switch to other blockchain, just to experiment with
+other technology and for learning purpose.
 
 ## Contact me
 

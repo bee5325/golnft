@@ -66,7 +66,7 @@ watch([rows, initId], async () => {
 });
 async function getMintedCount(rows: number): Promise<number> {
   try {
-    let resp = await axios.get(`${import.meta.env.SERVER_URL}/minted/${rows}`);
+    let resp = await axios.get(`${import.meta.env.VITE_SERVER_URL}/minted/${rows}`);
     return resp.data.rows;
   } catch (err) {
     console.log(err);
@@ -108,7 +108,7 @@ async function mint() {
   try {
     // first get init state from server
     let { data: { initState, meta: newMeta, signature } } = await axios.put(
-      `${import.meta.env.SERVER_URL}/board`,
+      `${import.meta.env.VITE_SERVER_URL}/board`,
       {rows: rows.value, account: account.value}
     );
 
@@ -176,18 +176,31 @@ async function mint() {
 
 // collections
 let collections = ref([]);
-let collectionStatus = ref<"loading" | "error" | "ready">("loading");
+let collectionStatus = ref<"not-loaded" | "loading" | "error" | "ready">(
+  "not-loaded"
+);
 watch([account, initId], async () => {
-  if (!account.value) {
+  let revealed = !initId.value.includes("?");
+  if (
+    !account.value ||
+    (collectionStatus.value !== "not-loaded" && !revealed)
+  ) {
     return;
   }
 
+  refreshCollections();
+});
+async function refreshCollections() {
   collectionStatus.value = "loading";
   try {
     // wait for 2s for collections to be updated in database
     // wait is not perfect. Consider to use web socket if encountering issue
     await new Promise((res) => setTimeout(res, 2000));
-    let col = (await axios.get(`${import.meta.env.SERVER_URL}/collections/${account.value}`)).data;
+    let col = (
+      await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/collections/${account.value}`
+      )
+    ).data;
     if (col) {
       collectionStatus.value = "ready";
       collections.value = col;
@@ -195,7 +208,7 @@ watch([account, initId], async () => {
   } catch (err) {
     collectionStatus.value = "error";
   }
-});
+}
 
 onMounted(() => {
   // for no wallet
@@ -204,10 +217,6 @@ onMounted(() => {
       type: "error",
       msg: "No wallet detected. Please install a wallet to continue",
     }
-  }
-
-  if (!walletDetected.value || !account.value) {
-    collectionStatus.value = "ready";
   }
 });
 </script>
@@ -229,7 +238,7 @@ onMounted(() => {
         <eos-icons-loading v-if="minting" class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2" />
       </button>
       <p class="font-bold break-words px-3">{{initId}}</p>
-      <div class="grid grid-cols-1 md:grid-cols-3 items-center">
+      <div class="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center md:justify-items-stretch">
         <GOLBoard
           class="md:col-start-2"
           :width="500"
@@ -243,7 +252,15 @@ onMounted(() => {
     </template>
     <hr class="m-4">
     <div class="min-h-screen">
-      <h1 class="font-bold text-green-600 text-2xl uppercase m-2">My collections ({{collections.length}})</h1>
+      <h1 class="font-bold text-green-600 text-2xl uppercase m-2">My collections ({{collections.length}})
+        <carbon-renew
+          class="text-green-900 w-5 align-middle ml-2 hover:text-green-400 cursor-pointer"
+          :class="{
+            'text-gray-500 hover:text-gray-500': collectionStatus === 'loading',
+          }"
+          @click="refreshCollections"
+        ></carbon-renew>
+      </h1>
       <Collections :collections="collections" :status="collectionStatus" />
     </div>
   </div>

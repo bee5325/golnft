@@ -35,7 +35,7 @@ async function setHovered(initState: string, ref: HTMLElement | null) {
   if (cache[initState]) {
     hoveredMeta.value = cache[initState];
   } else {
-    hoveredMeta.value = (await axios.get(`${import.meta.env.SERVER_URL}/board/${initState}`)).data;
+    hoveredMeta.value = (await axios.get(`${import.meta.env.VITE_SERVER_URL}/board/${initState}`)).data;
     cache[initState] = hoveredMeta.value;
   }
   loading.value = false;
@@ -46,6 +46,7 @@ async function setHovered(initState: string, ref: HTMLElement | null) {
 <template>
   <div class="flex justify-center items-center max-w-1500px my-5 mx-auto flex-wrap pb-300px">
     <p v-if="status === 'error'" class="mt-5 text-lg">Error showing your collections. Please try again later.</p>
+    <p v-else-if="status !== 'loading' && collections.length === 0" class="mt-5 text-lg">No item found. Try minting your first board now.</p>
     <transition-group
       v-for="col of collections"
       appear
@@ -58,9 +59,9 @@ async function setHovered(initState: string, ref: HTMLElement | null) {
       <div
         :key="col"
         class="relative inline-block"
-        @mouseover="setHovered(col, $event.target as HTMLElement)"
+        @mouseover="setHovered(col, $event.currentTarget as HTMLElement)"
         @mouseleave="setHovered('', null)"
-        @touchend="if(hovered) setHovered('', null); else setHovered(col, $event.target as HTMLElement);"
+        @touchend="if(hovered) setHovered('', null); else setHovered(col, $event.currentTarget as HTMLElement);"
       >
         <GOLBoard
           :toggle="false"

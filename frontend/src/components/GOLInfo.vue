@@ -12,7 +12,7 @@ interface TokenMeta {
   image: UrlString;
   externalUrl: UrlString;
   attributes: Array<Traits>;
-  baseTokenUrl?: UrlString;
+  baseTokenUri?: UrlString;
   tokenId?: number;
 }
 interface GolInfoProps {
@@ -43,7 +43,7 @@ const correction = computed(() => {
   }
 
   if (props.left + width.value > windowWidth.value - padding/2) {
-    return props.left + width.value - (windowWidth.value - padding/2);
+    return Math.floor(props.left + width.value - (windowWidth.value - padding/2));
   }
   return 0;
 });
@@ -52,7 +52,8 @@ const correction = computed(() => {
 <template>
   <div
     class="transform translate-x-0 inline-block p-4 rounded-md border-1 border-solid border-gray-400 bg-white z-1"
-    :class="`-translate-x-[${correction}px] max-w-[${width}px]`"
+    :style="{ maxWidth: `${width}px` }"
+    :class="[`-translate-x-[${correction}px]`]"
     ref="popup"
   >
     <eos-icons-loading v-if="loading" class="text-green-900 w-6 h-6 ml-2" />

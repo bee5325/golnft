@@ -78,6 +78,7 @@ export default defineConfig({
         markdownWrapperClasses,
         [...Array(14).keys()].map(i => `grid-cols-${i+3}`),
         [...Array(14).keys()].map(i => `grid-rows-${i+3}`),
+        [...Array(500).keys()].map((i) => `-translate-x-[${i}px]`),
       ],
     }),
 

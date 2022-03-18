@@ -12,6 +12,7 @@ COPY public ./public
 COPY src ./src
 COPY index.html ./
 COPY *config.ts ./
+COPY .env ./
 RUN npm run build
 
 # production stage
