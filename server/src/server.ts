@@ -116,7 +116,7 @@ app.get("/minted/:row", async (req, res) => {
 });
 
 // setup
-for (let key of ["PRIVATE_KEY", "CONTRACT_ADDRESS", "NETWORK"]) {
+for (let key of ["PRIVATE_KEY", "CONTRACT_ADDRESS"]) {
   if (!process.env[key]) {
     throw new Error(`${key} is not set in environment variables`);
   }
@@ -182,7 +182,16 @@ app.listen(port, () => {
     },
   ];
   // update db for pending transactions
-  let provider = ethers.getDefaultProvider(process.env.NETWORK);
+  let network =
+    process.env.NODE_ENV === "development"
+      ? process.env.NETWORK_TEST
+      : process.env.NETWORK;
+  if (!network) {
+    throw new Error(
+      "NETOWRK / NETWORK_TEST is not set in environment variables"
+    );
+  }
+  let provider = ethers.getDefaultProvider(network);
   contract = new ethers.Contract(process.env.CONTRACT_ADDRESS!, abi, provider);
   contract.on("Minted", dbUpdatePending);
 });
