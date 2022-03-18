@@ -7,7 +7,15 @@ require("dotenv").config();
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.1",
+  solidity: {
+    version: "0.8.1",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 100,
+      },
+    },
+  },
   networks: {
     arbRinkeby: {
       url: process.env.ALCHEMY_ARBRINKEBY_API_URL,

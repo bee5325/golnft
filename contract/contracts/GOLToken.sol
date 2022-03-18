@@ -1,24 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.1;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-
-import "hardhat/console.sol";
 
 contract GOLToken is ERC721URIStorage, Ownable {
   using Counters for Counters.Counter;
   Counters.Counter private _tokenIds;
   uint price;
   mapping(uint => mapping(uint => uint)) minted;
-  mapping(uint => string) tokenUri;
 
   event Minted(uint id, address to, uint rows, uint initState);
 
   constructor() ERC721("GOLToken", "GOLT") payable {
-    price = 0.0001 ether;
+    price = 0.001 ether;
   }
 
   function payToMint(uint rows, uint initState, string memory _tokenUri, bytes memory signature) payable public returns (uint) {
