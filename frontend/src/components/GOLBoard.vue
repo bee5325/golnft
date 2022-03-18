@@ -31,10 +31,15 @@ let props = defineProps({
   height: {
     type: Number,
     default: 0,
-  }
+  },
 });
 
-let emit = defineEmits(["initIdChanged", "running", "stepCountChanged", "loopChanged"]);
+let emit = defineEmits([
+  "initIdChanged",
+  "running",
+  "stepCountChanged",
+  "loopChanged",
+]);
 
 let maxRows = computed(() => props.initId.length / 4);
 let cells = ref(initIdToBoard());
@@ -53,11 +58,12 @@ let revealed = computed(() => !props.initId.includes("?"));
 
 function boardToInitId(): string {
   let rIds = cells.value.map((row) => {
-    return row.reduce((rtotal, cell, cIdx) => {
-      return cell ? rtotal + (1 << cIdx) : rtotal;
-    }, 0)
+    return row
+      .reduce((rtotal, cell, cIdx) => {
+        return cell ? rtotal + (1 << cIdx) : rtotal;
+      }, 0)
       .toString(16)
-      .padStart(4, '0');
+      .padStart(4, "0");
   });
   return rIds.join("");
 }
@@ -74,16 +80,20 @@ function initIdToBoard(): boolean[][] {
   }
 
   return initIdSplit.map((rIdStr) => {
-    let rIdBin =  parseInt(rIdStr, 16).toString(2).padStart(16, "0");
-    return rIdBin.split("").map((cell) => cell === '1').reverse().slice(0, maxRows.value);
+    let rIdBin = parseInt(rIdStr, 16).toString(2).padStart(16, "0");
+    return rIdBin
+      .split("")
+      .map((cell) => cell === "1")
+      .reverse()
+      .slice(0, maxRows.value);
   });
 }
 
 function nextStep(cells: boolean[][], col: number, row: number): boolean {
   let neighbours = [];
 
-  for (let r = row-1; r <= row+1; r++) {
-    for (let c = col-1; c <= col+1; c++) {
+  for (let r = row - 1; r <= row + 1; r++) {
+    for (let c = col - 1; c <= col + 1; c++) {
       // out of bound
       if (c < 0 || r < 0 || c >= maxRows.value || r >= maxRows.value) {
         continue;
@@ -123,8 +133,8 @@ function step(): boolean {
 }
 
 function _step(cells: boolean[][]): {
-  changed: boolean,
-  newCells: boolean[][]
+  changed: boolean;
+  newCells: boolean[][];
 } {
   let newCells = JSON.parse(JSON.stringify(cells));
   let changed = false;
@@ -146,7 +156,7 @@ function loopDetected(): boolean {
     return false;
   }
   hare.value = _step(steppedOnce.newCells).newCells;
-  return (JSON.stringify(cells.value) === JSON.stringify(hare.value));
+  return JSON.stringify(cells.value) === JSON.stringify(hare.value);
 }
 
 // animation in canvas
@@ -177,18 +187,28 @@ watch([cells, canvasWidth, canvasHeight], () => {
 
     const padding = 2;
     const color = "rgb(75, 85, 99)";
-    const width = (canvasWidth.value - 2*padding) / maxRows.value;
-    const height = (canvasHeight.value - 2*padding) / maxRows.value;
+    const width = (canvasWidth.value - 2 * padding) / maxRows.value;
+    const height = (canvasHeight.value - 2 * padding) / maxRows.value;
 
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
     ctx.clearRect(0, 0, canvasWidth.value, canvasHeight.value);
-    for (let r=0; r<maxRows.value; r++) {
-      for (let c=0; c<maxRows.value; c++) {
-        ctx.strokeRect(c*width+padding, r*height+padding, width, height);
+    for (let r = 0; r < maxRows.value; r++) {
+      for (let c = 0; c < maxRows.value; c++) {
+        ctx.strokeRect(
+          c * width + padding,
+          r * height + padding,
+          width,
+          height
+        );
         if (cells.value[r][c]) {
-          ctx.fillRect(c*width+padding, r*height+padding, width, height);
+          ctx.fillRect(
+            c * width + padding,
+            r * height + padding,
+            width,
+            height
+          );
         }
       }
     }
@@ -204,7 +224,7 @@ let stepCount = ref(0);
 let loop = ref(false);
 let restart = ref(false);
 let running = ref(false);
-let runTimer: number | null  = null;
+let runTimer: number | null = null;
 function run(_run: boolean) {
   const STEP_INTERVAL = 200;
   if (_run) {
@@ -221,7 +241,7 @@ function run(_run: boolean) {
         restart.value = true;
       }
     }, STEP_INTERVAL);
-  } else if (runTimer)  {
+  } else if (runTimer) {
     window.clearInterval(runTimer);
   }
 
@@ -244,7 +264,7 @@ function toggleCell(e: MouseEvent) {
   const pos = {
     x: e.clientX - canvasRect.x,
     y: e.clientY - canvasRect.y,
-  }
+  };
   let r = Math.floor(pos.y / height);
   let c = Math.floor(pos.x / width);
   cells.value[r][c] = !cells.value[r][c];
@@ -262,16 +282,17 @@ watch(loop, () => {
 });
 
 // autorun
-watch(() => props.initId, () => {
-  if (props.autorun && revealed.value) {
-    run(true);
+watch(
+  () => props.initId,
+  () => {
+    if (props.autorun && revealed.value) {
+      run(true);
+    }
   }
-});
+);
 
 // forceLoop
-watch(
-  [() => props.forceLoop, restart],
-  ([newLoop, newRestart], [oldLoop]) => {
+watch([() => props.forceLoop, restart], ([newLoop, newRestart], [oldLoop]) => {
   // force loop value changed
   if (oldLoop !== newLoop) {
     reset();
@@ -279,7 +300,7 @@ watch(
       run(true);
     } else {
       run(false);
-    } 
+    }
   }
   // restart after finish
   if (newLoop && newRestart) {
@@ -299,10 +320,25 @@ watch(
     >
     </canvas>
     <div v-if="controls">
-      <button class="btn" :disabled="running || !revealed" @click="step">Step</button>
-      <button class="btn" v-if="!running" @click="run(true)" :disabled="!revealed">Run</button>
+      <button class="btn" :disabled="running || !revealed" @click="step">
+        Step
+      </button>
+      <button
+        class="btn"
+        v-if="!running"
+        @click="run(true)"
+        :disabled="!revealed"
+      >
+        Run
+      </button>
       <button class="btn bg-red-500" v-else @click="run(false)">Stop</button>
-      <button class="btn bg-red-500" :disabled="running || !revealed" @click="reset">Reset</button>
+      <button
+        class="btn bg-red-500"
+        :disabled="running || !revealed"
+        @click="reset"
+      >
+        Reset
+      </button>
     </div>
   </div>
 </template>

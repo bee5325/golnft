@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const router = useRouter()
+const router = useRouter();
 </script>
 
 <template>
@@ -11,12 +11,7 @@ const router = useRouter()
     </div>
     <router-view />
     <div>
-      <button
-        class="btn m-3 text-sm mt-8"
-        @click="router.back()"
-      >
-        back
-      </button>
+      <button class="btn m-3 text-sm mt-8" @click="router.back()">back</button>
     </div>
   </main>
 </template>

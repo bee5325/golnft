@@ -5,7 +5,12 @@ import axios from "axios";
 
 let account: Ref<string> = ref("");
 let connect: () => Promise<void>;
-let payToMint: (rows: number, initState: string, tokenURI: string, signature: string) => Promise<any>;
+let payToMint: (
+  rows: number,
+  initState: string,
+  tokenURI: string,
+  signature: string
+) => Promise<any>;
 let tokenIdOf: (rows: number, initState: string) => Promise<number>;
 let _price: ComputedRef<Promise<string>>;
 let walletDetected = ref(false);
@@ -17,7 +22,9 @@ if (typeof useContract !== "undefined") {
 }
 
 function truncate(account: string) {
-  return `${account.substring(0, 7)}...${account.substring(account.length-5)}`;
+  return `${account.substring(0, 7)}...${account.substring(
+    account.length - 5
+  )}`;
 }
 
 // Auto update price when connected
@@ -33,8 +40,8 @@ watchEffect(async () => {
       type: "error",
       msg: `
         Error getting latest price for minting. Make sure you are connected to the correct network (Arbitrum).\n
-        Contact admin if the issue persists.`
-    }
+        Contact admin if the issue persists.`,
+    };
   } else {
     clearNotification();
   }
@@ -44,10 +51,10 @@ watchEffect(async () => {
 interface Notification {
   msg: string;
   type: "none" | "error" | "info";
-};
-let notification = ref<Notification>({msg: "", type: "none"});
+}
+let notification = ref<Notification>({ msg: "", type: "none" });
 function clearNotification() {
-  notification.value = {msg: "", type: "none"};
+  notification.value = { msg: "", type: "none" };
 }
 
 // show minted count
@@ -66,7 +73,9 @@ watch([rows, initId], async () => {
 });
 async function getMintedCount(rows: number): Promise<number> {
   try {
-    let resp = await axios.get(`${import.meta.env.VITE_SERVER_URL}/minted/${rows}`);
+    let resp = await axios.get(
+      `${import.meta.env.VITE_SERVER_URL}/minted/${rows}`
+    );
     return resp.data.rows;
   } catch (err) {
     console.log(err);
@@ -77,7 +86,7 @@ let combinations = computed(() => {
   if (rows.value < 3 || rows.value > 16) {
     return "N/A";
   }
-  return Math.pow(2,rows.value*rows.value)
+  return Math.pow(2, rows.value * rows.value);
 });
 
 // contract interaction
@@ -97,7 +106,7 @@ watch(rows, () => {
     return;
   }
   if (initId.value.includes("?")) {
-    initId.value = "".padStart(rows.value*4, "?");
+    initId.value = "".padStart(rows.value * 4, "?");
   }
 });
 
@@ -107,16 +116,23 @@ async function mint() {
 
   try {
     // first get init state from server
-    let { data: { initState, meta: newMeta, signature } } = await axios.put(
-      `${import.meta.env.VITE_SERVER_URL}/board`,
-      {rows: rows.value, account: account.value}
-    );
+    let {
+      data: { initState, meta: newMeta, signature },
+    } = await axios.put(`${import.meta.env.VITE_SERVER_URL}/board`, {
+      rows: rows.value,
+      account: account.value,
+    });
 
     // pay and mint on chain
-    let res = await payToMint(rows.value, initState, newMeta.baseTokenUri, signature);
+    let res = await payToMint(
+      rows.value,
+      initState,
+      newMeta.baseTokenUri,
+      signature
+    );
     notification.value = {
       msg: `Transaction confirmed!\nTransaction ID: ${res.transactionHash}`,
-      type: "info"
+      type: "info",
     };
 
     // display
@@ -132,21 +148,24 @@ async function mint() {
             : "Unexpected error happened. Please reset your wallet account and try again";
           notification.value = {
             type: "error",
-            msg: errMsg.replace("Error: VM Exception while processing transaction: ", "")
+            msg: errMsg.replace(
+              "Error: VM Exception while processing transaction: ",
+              ""
+            ),
           };
           break;
         }
         case 4001: {
           notification.value = {
             type: "error",
-            msg: "Transaction rejected by user"
+            msg: "Transaction rejected by user",
           };
           break;
         }
         default:
           notification.value = {
             type: "error",
-            msg: "Unexpected error happend. Please try again later."
+            msg: "Unexpected error happend. Please try again later.",
           };
           console.log(JSON.stringify(err));
           break;
@@ -165,7 +184,7 @@ async function mint() {
       notification.value = {
         type: "error",
         msg: "Unexpected error happened. Please try again later",
-      }
+      };
       console.trace(err);
       console.log(JSON.stringify(err));
     }
@@ -216,29 +235,60 @@ onMounted(() => {
     notification.value = {
       type: "error",
       msg: "No wallet detected. Please install a wallet to continue",
-    }
+    };
   }
 });
 </script>
 
 <template>
   <div>
-    <Notification :type="notification.type" :msg="notification.msg" @clearNotification="clearNotification" />
+    <Notification
+      :type="notification.type"
+      :msg="notification.msg"
+      @clearNotification="clearNotification"
+    />
     <h1 class="uppercase">Mint</h1>
-    <button v-if="!account" class="btn" :disabled="connecting || !walletDetected" @click="connectWallet">Connect your wallet</button>
+    <button
+      v-if="!account"
+      class="btn"
+      :disabled="connecting || !walletDetected"
+      @click="connectWallet"
+    >
+      Connect your wallet
+    </button>
     <template v-else>
-      <p>Account <span class="font-bold">{{truncate(account)}}</span></p>
+      <p>
+        Account <span class="font-bold">{{ truncate(account) }}</span>
+      </p>
       <div class="m-auto">
         <label>Number of rows (3 - 16)</label>
-        <input type="number" v-model="rows" class="border-gray-300 border-1 border-solid px-2 py-1 m-2" min="3" max="16" />
+        <input
+          type="number"
+          v-model="rows"
+          class="border-gray-300 border-1 border-solid px-2 py-1 m-2"
+          min="3"
+          max="16"
+        />
       </div>
-      <p>(<span class="font-bold">{{mintedCount}}</span> of {{combinations}} minted)</p>
-      <button class="btn relative" :disabled="minting || price === '?'" @click="mint">
+      <p>
+        (<span class="font-bold">{{ mintedCount }}</span> of
+        {{ combinations }} minted)
+      </p>
+      <button
+        class="btn relative"
+        :disabled="minting || price === '?'"
+        @click="mint"
+      >
         Mint for {{ price }} ETH
-        <eos-icons-loading v-if="minting" class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2" />
+        <eos-icons-loading
+          v-if="minting"
+          class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2"
+        />
       </button>
-      <p class="font-bold break-words px-3">{{initId}}</p>
-      <div class="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center md:justify-items-stretch">
+      <p class="font-bold break-words px-3">{{ initId }}</p>
+      <div
+        class="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center md:justify-items-stretch"
+      >
         <GOLBoard
           class="md:col-start-2"
           :width="500"
@@ -250,9 +300,10 @@ onMounted(() => {
         <GOLInfo v-if="meta" :meta="meta" :loading="false" />
       </div>
     </template>
-    <hr class="m-4">
+    <hr class="m-4" />
     <div class="min-h-screen">
-      <h1 class="font-bold text-green-600 text-2xl uppercase m-2">My collections ({{collections.length}})
+      <h1 class="font-bold text-green-600 text-2xl uppercase m-2">
+        My collections ({{ collections.length }})
         <carbon-renew
           class="text-green-900 w-5 align-middle ml-2 hover:text-green-400 cursor-pointer"
           :class="{

@@ -5,11 +5,10 @@
 declare module 'vue' {
   export interface GlobalComponents {
     CarbonClose: typeof import('~icons/carbon/close')['default']
+    CarbonRenew: typeof import('~icons/carbon/renew')['default']
     Collections: typeof import('./components/Collections.vue')['default']
     ContactForm: typeof import('./components/ContactForm.vue')['default']
-    Counter: typeof import('./components/Counter.vue')['default']
     EosIconsLoading: typeof import('~icons/eos-icons/loading')['default']
-    Footer: typeof import('./components/Footer.vue')['default']
     GOLBoard: typeof import('./components/GOLBoard.vue')['default']
     GOLCell: typeof import('./components/GOLCell.vue')['default']
     GOLInfo: typeof import('./components/GOLInfo.vue')['default']

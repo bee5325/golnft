@@ -16,6 +16,6 @@ module.exports = {
     arbitrum: {
       url: process.env.ALCHEMY_ARBITRUM_API_URL,
       accounts: [`0x${process.env.PRIVATE_KEY}`],
-    }
-  }
+    },
+  },
 };

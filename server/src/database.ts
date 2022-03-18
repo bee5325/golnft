@@ -1,5 +1,5 @@
 import "dotenv/config";
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 // collections
 interface CollectionType {
@@ -10,13 +10,16 @@ const collectionSchema = new mongoose.Schema<CollectionType>({
   account: String,
   collections: [String],
 });
-const Collection = mongoose.model<CollectionType>("Collection", collectionSchema);
+const Collection = mongoose.model<CollectionType>(
+  "Collection",
+  collectionSchema
+);
 
 // minted
 type UrlString = string;
 type Traits =
-  { trait_types: "Step count", value: number } |
-  { trait_types: "Loop", value: "Yes" | "No" };
+  | { trait_types: "Step count"; value: number }
+  | { trait_types: "Loop"; value: "Yes" | "No" };
 
 interface TokenMeta {
   name: string;
@@ -45,9 +48,10 @@ const mintedSchema = new mongoose.Schema<TokenMeta>({
 const Minted = mongoose.model<TokenMeta>("Minted", mintedSchema);
 
 // setup
-let dbUrl = process.env.NODE_ENV === 'development'
+let dbUrl =
+  process.env.NODE_ENV === "development"
     ? process.env.DB_URL_TEST
-    : process.env.DB_URL; 
+    : process.env.DB_URL;
 
 if (!dbUrl) {
   throw new Error("DB_URL not set in environment variables");

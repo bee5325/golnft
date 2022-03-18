@@ -6,12 +6,12 @@ defineProps({
     type: Object,
     default() {
       return [];
-    }
+    },
   },
   status: {
     type: String,
     default: "loading",
-  }
+  },
 });
 
 let hovered = ref<string>("");
@@ -24,7 +24,7 @@ async function setHovered(initState: string, ref: HTMLElement | null) {
   hovered.value = initState;
   loading.value = true;
 
-  if (initState === '' || ref === null) {
+  if (initState === "" || ref === null) {
     hoveredMeta.value = null;
     loading.value = false;
     return;
@@ -35,18 +35,28 @@ async function setHovered(initState: string, ref: HTMLElement | null) {
   if (cache[initState]) {
     hoveredMeta.value = cache[initState];
   } else {
-    hoveredMeta.value = (await axios.get(`${import.meta.env.VITE_SERVER_URL}/board/${initState}`)).data;
+    hoveredMeta.value = (
+      await axios.get(`${import.meta.env.VITE_SERVER_URL}/board/${initState}`)
+    ).data;
     cache[initState] = hoveredMeta.value;
   }
   loading.value = false;
 }
-
 </script>
 
 <template>
-  <div class="flex justify-center items-center max-w-1500px my-5 mx-auto flex-wrap pb-300px">
-    <p v-if="status === 'error'" class="mt-5 text-lg">Error showing your collections. Please try again later.</p>
-    <p v-else-if="status !== 'loading' && collections.length === 0" class="mt-5 text-lg">No item found. Try minting your first board now.</p>
+  <div
+    class="flex justify-center items-center max-w-1500px my-5 mx-auto flex-wrap pb-300px"
+  >
+    <p v-if="status === 'error'" class="mt-5 text-lg">
+      Error showing your collections. Please try again later.
+    </p>
+    <p
+      v-else-if="status !== 'loading' && collections.length === 0"
+      class="mt-5 text-lg"
+    >
+      No item found. Try minting your first board now.
+    </p>
     <transition-group
       v-for="col of collections"
       appear
@@ -86,6 +96,9 @@ async function setHovered(initState: string, ref: HTMLElement | null) {
         </transition>
       </div>
     </transition-group>
-    <eos-icons-loading v-if="status === 'loading'" class="text-green-900 w-10 h-10 m-5" />
+    <eos-icons-loading
+      v-if="status === 'loading'"
+      class="text-green-900 w-10 h-10 m-5"
+    />
   </div>
 </template>

@@ -1,11 +1,11 @@
 // Imports dependencies and set up http server
 import "dotenv/config";
-import express from 'express';
-import { ethers } from 'ethers';
-import cors from 'cors';
-import { Collection, Minted, TokenMeta } from './database';
-import { genGIF, genMeta } from './genGIF';
-import nodemailer from 'nodemailer';
+import express from "express";
+import { ethers } from "ethers";
+import cors from "cors";
+import { Collection, Minted, TokenMeta } from "./database";
+import { genGIF, genMeta } from "./genGIF";
+import nodemailer from "nodemailer";
 
 const port = process.env.PORT || 3000;
 let contract: ethers.Contract;
@@ -29,7 +29,12 @@ app.put("/board", async (req, res) => {
     let { meta, signature } = pending;
 
     // double check if state exists
-    if (!(await contract.initStateExists(rows, ethers.BigNumber.from(`0x${meta.initState}`)))) {
+    if (
+      !(await contract.initStateExists(
+        rows,
+        ethers.BigNumber.from(`0x${meta.initState}`)
+      ))
+    ) {
       res.send({ initState: meta.initState, meta, signature });
       return;
     }
@@ -42,13 +47,15 @@ app.put("/board", async (req, res) => {
   }
 
   // check if all taken
-  let mintedDocs = await Minted.find({ rows }).select('initState');
+  let mintedDocs = await Minted.find({ rows }).select("initState");
   let minted = [
     ...mintedDocs.map((m) => m.initState),
-    ...getPendingTransactionsForRows(rows)
+    ...getPendingTransactionsForRows(rows),
   ];
-  if (minted.length === Math.pow(2, rows*rows)) {
-    res.status(400).send({ msg: `All possibilities were already minted for ${rows} rows` });
+  if (minted.length === Math.pow(2, rows * rows)) {
+    res
+      .status(400)
+      .send({ msg: `All possibilities were already minted for ${rows} rows` });
     return;
   }
 
@@ -70,9 +77,9 @@ app.put("/board", async (req, res) => {
     externalUrl: `${process.env.SITE_URL}/${initState}`,
     attributes: [
       { trait_types: "Step count", value: stepCount },
-      { trait_types: "Loop", value: loop ? "Yes": "No" },
+      { trait_types: "Loop", value: loop ? "Yes" : "No" },
     ],
-  }
+  };
 
   let baseTokenUri = await genMeta(initStateStr, meta);
   meta.baseTokenUri = baseTokenUri;
@@ -84,7 +91,7 @@ app.put("/board", async (req, res) => {
   // Check dbUpdatePending() for details
   addPendingTransactions(account, rows, {
     meta,
-    signature
+    signature,
   });
 
   res.send({ initState: initStateStr, signature, meta });
@@ -104,7 +111,7 @@ app.get("/collections/:account", async (req, res) => {
 
 app.get("/minted/:row", async (req, res) => {
   let { row } = req.params;
-  let rows = await Minted.count({ rows: row }); 
+  let rows = await Minted.count({ rows: row });
   res.send({ rows });
 });
 
@@ -119,59 +126,59 @@ app.listen(port, () => {
 
   let abi = [
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
+          indexed: false,
+          internalType: "uint256",
+          name: "id",
+          type: "uint256",
         },
         {
-          "indexed": false,
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
+          indexed: false,
+          internalType: "address",
+          name: "to",
+          type: "address",
         },
         {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "rows",
-          "type": "uint256"
+          indexed: false,
+          internalType: "uint256",
+          name: "rows",
+          type: "uint256",
         },
         {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "initState",
-          "type": "uint256"
-        }
+          indexed: false,
+          internalType: "uint256",
+          name: "initState",
+          type: "uint256",
+        },
       ],
-      "name": "Minted",
-      "type": "event"
+      name: "Minted",
+      type: "event",
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "uint256",
-          "name": "rows",
-          "type": "uint256"
+          internalType: "uint256",
+          name: "rows",
+          type: "uint256",
         },
         {
-          "internalType": "uint256",
-          "name": "initState",
-          "type": "uint256"
-        }
+          internalType: "uint256",
+          name: "initState",
+          type: "uint256",
+        },
       ],
-      "name": "initStateExists",
-      "outputs": [
+      name: "initStateExists",
+      outputs: [
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
+          internalType: "bool",
+          name: "",
+          type: "bool",
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: "view",
+      type: "function",
     },
   ];
   // update db for pending transactions
@@ -188,7 +195,7 @@ app.post("/feedback", (req, res) => {
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
-      }
+      },
     });
     transporter.sendMail({
       from: process.env.MAIL_USER,
@@ -207,43 +214,62 @@ app.post("/feedback", (req, res) => {
  * helper functions
  *
  **/
-async function getSignature(rows: number, initState: ethers.BigNumber, address: string) {
+async function getSignature(
+  rows: number,
+  initState: ethers.BigNumber,
+  address: string
+) {
   let signer = new ethers.Wallet(process.env.PRIVATE_KEY!);
   let abiCoder = ethers.utils.defaultAbiCoder;
 
   return await signer.signMessage(
     ethers.utils.arrayify(
       ethers.utils.keccak256(
-        abiCoder.encode(
-          ['uint', 'uint', 'address'],
-          [rows, initState, address]
-        )
+        abiCoder.encode(["uint", "uint", "address"], [rows, initState, address])
       )
     )
-  )
-};
+  );
+}
 
 function randomize(maxRows: number) {
-  let rows = Array(maxRows).fill(0).reduce((total, _, idx) => {
-    let row = Array(maxRows).fill(0).reduce((rowTotal, _, rIdx) => {
-      const ALIVE_CHANCE = 0.2;
-      return (Math.random() < ALIVE_CHANCE) ? rowTotal + (1 << rIdx) : rowTotal;
-    }, 0);
-    return total.add(ethers.BigNumber.from(`0x${row.toString(16).padStart(4, "0")}${"".padStart(4 * idx, "0")}`));
-  }, ethers.BigNumber.from("0"));
+  let rows = Array(maxRows)
+    .fill(0)
+    .reduce((total, _, idx) => {
+      let row = Array(maxRows)
+        .fill(0)
+        .reduce((rowTotal, _, rIdx) => {
+          const ALIVE_CHANCE = 0.2;
+          return Math.random() < ALIVE_CHANCE
+            ? rowTotal + (1 << rIdx)
+            : rowTotal;
+        }, 0);
+      return total.add(
+        ethers.BigNumber.from(
+          `0x${row.toString(16).padStart(4, "0")}${"".padStart(4 * idx, "0")}`
+        )
+      );
+    }, ethers.BigNumber.from("0"));
   return rows;
 }
 
 function bigNumToInitState(bigNum: ethers.BigNumber, maxRows: number): string {
-  return bigNum.toHexString().replace("0x", "").padStart(maxRows*4, "0");
+  return bigNum
+    .toHexString()
+    .replace("0x", "")
+    .padStart(maxRows * 4, "0");
 }
 
-function getPendingTransaction(account: string, rows: number): PendingTransaction {
+function getPendingTransaction(
+  account: string,
+  rows: number
+): PendingTransaction {
   return pendingTransactions[`${account}.${rows}`];
 }
 
 function getPendingTransactionsForRows(rows: number): string[] {
-  let pendingForRows = Object.values(pendingTransactions).filter((pending) => pending.meta.rows === rows);
+  let pendingForRows = Object.values(pendingTransactions).filter(
+    (pending) => pending.meta.rows === rows
+  );
   return pendingForRows.map((pending) => pending.meta.initState);
 }
 
@@ -251,18 +277,29 @@ function pendingTransactionsFound(account: string, rows: number): boolean {
   return pendingTransactions[`${account}.${rows}`] !== undefined;
 }
 
-function addPendingTransactions(account: string, rows: number, transaction: PendingTransaction) {
+function addPendingTransactions(
+  account: string,
+  rows: number,
+  transaction: PendingTransaction
+) {
   pendingTransactions[`${account}.${rows}`] = transaction;
 }
 
-async function dbUpdatePending(tokenId: ethers.BigNumber, account: string, rows: ethers.BigNumber, initState: ethers.BigNumber) {
+async function dbUpdatePending(
+  tokenId: ethers.BigNumber,
+  account: string,
+  rows: ethers.BigNumber,
+  initState: ethers.BigNumber
+) {
   account = account.toLowerCase();
   let initStateStr = bigNumToInitState(initState, rows.toNumber());
   let transactionId = `${account}.${rows}`;
   let transaction = pendingTransactions[transactionId];
 
   if (!transaction) {
-    console.error(`Pending transaction for account ${account} rows ${rows} is not found`);
+    console.error(
+      `Pending transaction for account ${account} rows ${rows} is not found`
+    );
     return;
   }
 
@@ -271,7 +308,7 @@ async function dbUpdatePending(tokenId: ethers.BigNumber, account: string, rows:
   let oldCol = col ? col.collections : [];
   let newCol = {
     account,
-    collections: [...oldCol, initStateStr]
+    collections: [...oldCol, initStateStr],
   };
   await Collection.replaceOne({ account }, newCol, { upsert: true });
 

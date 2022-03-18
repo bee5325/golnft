@@ -1,8 +1,8 @@
 <script setup lang="ts">
 type UrlString = string;
 type Traits =
-  { trait_types: "Step count", value: number } |
-  { trait_types: "Loop", value: "Yes" | "No" };
+  | { trait_types: "Step count"; value: number }
+  | { trait_types: "Loop"; value: "Yes" | "No" };
 interface TokenMeta {
   name: string;
   date: number;
@@ -18,15 +18,12 @@ interface TokenMeta {
 interface GolInfoProps {
   meta: TokenMeta | null;
   loading: boolean;
-  left?: number,
+  left?: number;
 }
 
-let props = withDefaults(
-  defineProps<GolInfoProps>(), 
-  {
-    loading: false,
-  }
-);
+let props = withDefaults(defineProps<GolInfoProps>(), {
+  loading: false,
+});
 
 let popup = ref(null);
 const { width: windowWidth } = useWindowSize();
@@ -42,8 +39,10 @@ const correction = computed(() => {
     return 0;
   }
 
-  if (props.left + width.value > windowWidth.value - padding/2) {
-    return Math.floor(props.left + width.value - (windowWidth.value - padding/2));
+  if (props.left + width.value > windowWidth.value - padding / 2) {
+    return Math.floor(
+      props.left + width.value - (windowWidth.value - padding / 2)
+    );
   }
   return 0;
 });
@@ -66,32 +65,66 @@ const correction = computed(() => {
     >
       <table class="text-left table-fixed">
         <tr>
-          <td class="py-2"><label class="mr-2 whitespace-nowrap">Name:</label></td>
-          <td class="py-2"><span class="font-bold break-all">{{meta.name}}</span></td>
+          <td class="py-2">
+            <label class="mr-2 whitespace-nowrap">Name:</label>
+          </td>
+          <td class="py-2">
+            <span class="font-bold break-all">{{ meta.name }}</span>
+          </td>
         </tr>
         <tr>
-          <td class="py-2"><label class="mr-2 whitespace-nowrap">Created on:</label></td>
-          <td class="py-2"><span class="font-bold">{{new Date(meta.date).toDateString()}}</span></td>
+          <td class="py-2">
+            <label class="mr-2 whitespace-nowrap">Created on:</label>
+          </td>
+          <td class="py-2">
+            <span class="font-bold">{{
+              new Date(meta.date).toDateString()
+            }}</span>
+          </td>
         </tr>
         <tr>
-          <td class="py-2"><label class="mr-2 whitespace-nowrap">Token ID:</label></td>
-          <td class="py-2"><span class="font-bold break-all">{{meta.tokenId}}</span></td>
+          <td class="py-2">
+            <label class="mr-2 whitespace-nowrap">Token ID:</label>
+          </td>
+          <td class="py-2">
+            <span class="font-bold break-all">{{ meta.tokenId }}</span>
+          </td>
         </tr>
         <tr>
-          <td class="py-2"><label class="mr-2 whitespace-nowrap">Init state:</label></td>
-          <td class="py-2"><span class="font-bold break-all">{{meta.initState}}</span></td>
+          <td class="py-2">
+            <label class="mr-2 whitespace-nowrap">Init state:</label>
+          </td>
+          <td class="py-2">
+            <span class="font-bold break-all">{{ meta.initState }}</span>
+          </td>
         </tr>
         <tr>
-          <td class="py-2"><label class="mr-2 whitespace-nowrap">Number of rows:</label></td>
-          <td class="py-2"><span class="font-bold">{{meta.rows}}</span></td>
+          <td class="py-2">
+            <label class="mr-2 whitespace-nowrap">Number of rows:</label>
+          </td>
+          <td class="py-2">
+            <span class="font-bold">{{ meta.rows }}</span>
+          </td>
         </tr>
         <tr>
-          <td class="py-2"><label class="mr-2 whitespace-nowrap">GIF URL:</label></td>
-          <td class="py-2"><a :href="meta.image" target="_blank" class="text-blue-500">GIF file <ic-baseline-open-in-new /></a></td>
+          <td class="py-2">
+            <label class="mr-2 whitespace-nowrap">GIF URL:</label>
+          </td>
+          <td class="py-2">
+            <a :href="meta.image" target="_blank" class="text-blue-500"
+              >GIF file <ic-baseline-open-in-new
+            /></a>
+          </td>
         </tr>
         <tr v-for="attr of meta.attributes" :key="attr.trait_types">
-          <td class="py-2"><label class="mr-2 whitespace-nowrap">{{attr.trait_types}}:</label></td>
-          <td class="py-2"><span class="font-bold">{{attr.value}}</span></td>
+          <td class="py-2">
+            <label class="mr-2 whitespace-nowrap"
+              >{{ attr.trait_types }}:</label
+            >
+          </td>
+          <td class="py-2">
+            <span class="font-bold">{{ attr.value }}</span>
+          </td>
         </tr>
       </table>
     </transition>

@@ -5,7 +5,12 @@ declare let window: any;
 interface Contract {
   account: Ref<string>;
   connect: () => Promise<void>;
-  payToMint: (rows: number, initState: string, tokenURI: string, signature: string) => Promise<any>;
+  payToMint: (
+    rows: number,
+    initState: string,
+    tokenURI: string,
+    signature: string
+  ) => Promise<any>;
   price: ComputedRef<Promise<string>>;
   tokenIdOf: (rows: number, initState: string) => Promise<number>;
 }
@@ -23,75 +28,75 @@ if (typeof window !== "undefined" && window.ethereum) {
 
   const contractAbi = [
     {
-      "inputs": [],
-      "name": "getPrice",
-      "outputs": [
+      inputs: [],
+      name: "getPrice",
+      outputs: [
         {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "uint256",
-          "name": "rows",
-          "type": "uint256"
+          internalType: "uint256",
+          name: "rows",
+          type: "uint256",
         },
         {
-          "internalType": "uint256",
-          "name": "initState",
-          "type": "uint256"
+          internalType: "uint256",
+          name: "initState",
+          type: "uint256",
         },
         {
-          "internalType": "string",
-          "name": "_tokenUri",
-          "type": "string"
+          internalType: "string",
+          name: "_tokenUri",
+          type: "string",
         },
         {
-          "internalType": "bytes",
-          "name": "signature",
-          "type": "bytes"
-        }
+          internalType: "bytes",
+          name: "signature",
+          type: "bytes",
+        },
       ],
-      "name": "payToMint",
-      "outputs": [
+      name: "payToMint",
+      outputs: [
         {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
       ],
-      "stateMutability": "payable",
-      "type": "function"
+      stateMutability: "payable",
+      type: "function",
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "uint256",
-          "name": "rows",
-          "type": "uint256"
+          internalType: "uint256",
+          name: "rows",
+          type: "uint256",
         },
         {
-          "internalType": "uint256",
-          "name": "initState",
-          "type": "uint256"
-        }
+          internalType: "uint256",
+          name: "initState",
+          type: "uint256",
+        },
       ],
-      "name": "tokenIdOf",
-      "outputs": [
+      name: "tokenIdOf",
+      outputs: [
         {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: "view",
+      type: "function",
     },
   ];
 
@@ -99,18 +104,20 @@ if (typeof window !== "undefined" && window.ethereum) {
     let currentAccount = ref<string>("");
     let provider = new ethers.providers.Web3Provider(window.ethereum);
     let signer = provider.getSigner();
-    let contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
-    let contract = ref(new ethers.Contract(
-      contractAddress,
-      contractAbi,
-      signer
-    ));
+    let contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS as string;
+    let contract = ref(
+      new ethers.Contract(contractAddress, contractAbi, signer)
+    );
 
-    ethereum.on('accountsChanged', handleAccountsChanged);
-    ethereum.on('chainChanged', () => {
+    ethereum.on("accountsChanged", handleAccountsChanged);
+    ethereum.on("chainChanged", () => {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       signer = provider.getSigner();
-      contract.value = new ethers.Contract(contractAddress, contractAbi, signer);
+      contract.value = new ethers.Contract(
+        contractAddress,
+        contractAbi,
+        signer
+      );
     });
 
     async function connect() {
@@ -127,13 +134,18 @@ if (typeof window !== "undefined" && window.ethereum) {
 
     // check account connected on start
     ethereum
-      .request({ method: 'eth_accounts' })
+      .request({ method: "eth_accounts" })
       .then(handleAccountsChanged)
       .catch((err: ProviderRpcError) => {
         console.error(err);
       });
 
-    async function payToMint(rows: number, initState: string, tokenURI: string, signature: string) {
+    async function payToMint(
+      rows: number,
+      initState: string,
+      tokenURI: string,
+      signature: string
+    ) {
       let latestPrice = await price.value;
       if (!latestPrice) {
         throw new Error("Unable to get latest price");
@@ -150,7 +162,7 @@ if (typeof window !== "undefined" && window.ethereum) {
 
     let price = computed(async () => {
       try {
-        return ethers.utils.formatEther(await contract.value.getPrice())
+        return ethers.utils.formatEther(await contract.value.getPrice());
       } catch {
         return "?";
       }
@@ -158,7 +170,10 @@ if (typeof window !== "undefined" && window.ethereum) {
 
     async function tokenIdOf(rows: number, initState: string) {
       try {
-        return await contract.value.tokenIdOf(rows, ethers.BigNumber.from(`0x${initState}`));
+        return await contract.value.tokenIdOf(
+          rows,
+          ethers.BigNumber.from(`0x${initState}`)
+        );
       } catch (err) {
         console.log(err);
         return "?";
@@ -172,7 +187,7 @@ if (typeof window !== "undefined" && window.ethereum) {
       price,
       tokenIdOf,
     };
-  }
+  };
 }
 
 export { useContract };

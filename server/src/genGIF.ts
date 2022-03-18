@@ -1,29 +1,29 @@
-import 'dotenv/config';
-import { createCanvas } from 'canvas';
-import * as fs from 'fs';
-import GIFEncoder from 'gifencoder';
-import path from 'path';
-import pinataSDK from '@pinata/sdk';
-import { PinataClient } from '@pinata/sdk';
-import { TokenMeta } from './database';
+import "dotenv/config";
+import { createCanvas } from "canvas";
+import * as fs from "fs";
+import GIFEncoder from "gifencoder";
+import path from "path";
+import pinataSDK from "@pinata/sdk";
+import { PinataClient } from "@pinata/sdk";
+import { TokenMeta } from "./database";
 
 const canvasWidth = 350;
 const canvasHeight = 350;
 let pinata: PinataClient;
 
 async function genGIF(initState: string): Promise<{
-  gifUrl: string,
-  stepCount: number,
-  loop: boolean
+  gifUrl: string;
+  stepCount: number;
+  loop: boolean;
 }> {
   const gifLoopCount = 3;
   const canvas = createCanvas(canvasWidth, canvasHeight);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   const rows = initState.length / 4;
   const padding = 2;
   const color = "rgb(75, 85, 99)";
-  const width = (canvasWidth - 2*padding) / rows;
-  const height = (canvasHeight - 2*padding) / rows;
+  const width = (canvasWidth - 2 * padding) / rows;
+  const height = (canvasHeight - 2 * padding) / rows;
   const filePath = path.resolve(`../tmp/${initState}.gif`);
 
   const encoder = new GIFEncoder(canvasWidth, canvasHeight);
@@ -32,8 +32,8 @@ async function genGIF(initState: string): Promise<{
   }
   encoder.createReadStream().pipe(fs.createWriteStream(filePath));
   encoder.start();
-  encoder.setRepeat(0);   // 0 for repeat, -1 for no-repeat
-  encoder.setDelay(200);  // frame delay in ms
+  encoder.setRepeat(0); // 0 for repeat, -1 for no-repeat
+  encoder.setDelay(200); // frame delay in ms
   encoder.setQuality(10);
 
   let loopCount = 0;
@@ -48,16 +48,26 @@ async function genGIF(initState: string): Promise<{
 
   // max step limit 200
   console.log("Start generate gif");
-  for (let step=0; step<200; step++) {
+  for (let step = 0; step < 200; step++) {
     // draw on canvas
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     ctx.fillStyle = color;
-    for (let r=0; r<rows; r++) {
-      for (let c=0; c<rows; c++) {
-        ctx.strokeRect(c*width+padding, r*height+padding, width, height);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < rows; c++) {
+        ctx.strokeRect(
+          c * width + padding,
+          r * height + padding,
+          width,
+          height
+        );
         if (cells[r][c]) {
-          ctx.fillRect(c*width+padding, r*height+padding, width, height);
+          ctx.fillRect(
+            c * width + padding,
+            r * height + padding,
+            width,
+            height
+          );
         }
       }
     }
@@ -110,17 +120,16 @@ async function genMeta(initState: string, meta: TokenMeta) {
     return "URL for metafile";
   }
   console.log("Start upload metafile");
-  let res = await pinata.pinJSONToIPFS(
-    meta,
-    { pinataMetadata: { name: `${initState}.json` }}
-  );
+  let res = await pinata.pinJSONToIPFS(meta, {
+    pinataMetadata: { name: `${initState}.json` },
+  });
   console.log("Done upload metafile");
   return `https://ipfs.io/ipfs/${res.IpfsHash}`;
 }
 
 /**
-  * Helper functions
-  **/
+ * Helper functions
+ **/
 function initIdToBoard(initState: string): boolean[][] {
   const rows = initState.length / 4;
 
@@ -134,8 +143,12 @@ function initIdToBoard(initState: string): boolean[][] {
   }
 
   return initIdSplit.map((rIdStr) => {
-    let rIdBin =  parseInt(rIdStr, 16).toString(2).padStart(16, "0");
-    return rIdBin.split("").map((cell) => cell === '1').reverse().slice(0, rows);
+    let rIdBin = parseInt(rIdStr, 16).toString(2).padStart(16, "0");
+    return rIdBin
+      .split("")
+      .map((cell) => cell === "1")
+      .reverse()
+      .slice(0, rows);
   });
 }
 
@@ -143,8 +156,8 @@ function nextStep(cells: boolean[][], col: number, row: number): boolean {
   let neighbours = [];
   let rows = cells.length;
 
-  for (let r = row-1; r <= row+1; r++) {
-    for (let c = col-1; c <= col+1; c++) {
+  for (let r = row - 1; r <= row + 1; r++) {
+    for (let c = col - 1; c <= col + 1; c++) {
       // out of bound
       if (c < 0 || r < 0 || c >= rows || r >= rows) {
         continue;
@@ -171,8 +184,8 @@ function nextStep(cells: boolean[][], col: number, row: number): boolean {
 }
 
 function stepCells(cells: boolean[][]): {
-  changed: boolean,
-  newCells: boolean[][]
+  changed: boolean;
+  newCells: boolean[][];
 } {
   let newCells = JSON.parse(JSON.stringify(cells));
   let changed = false;
@@ -202,7 +215,7 @@ async function fileGenerated(file: string) {
         }
         setTimeout(checkFileExists, 100);
       }
-    }
+    };
     setTimeout(checkFileExists, 100);
   });
 }
@@ -221,7 +234,7 @@ async function uploadIPFS(filePath: string) {
 function advanceHare(hare: boolean[][]) {
   let stepOnce = stepCells(hare);
   let newHare = stepCells(stepOnce.newCells);
-  return { cells: newHare.newCells, changed: newHare.changed }
+  return { cells: newHare.newCells, changed: newHare.changed };
 }
 
 function loopDetected(turtle: boolean[][], hare: boolean[][]) {
@@ -235,7 +248,10 @@ async function setup() {
       throw new Error(`${key} is not set in environment variables`);
     }
   }
-  pinata = pinataSDK(process.env.PINATA_API_KEY!, process.env.PINATA_API_SECRET!);
+  pinata = pinataSDK(
+    process.env.PINATA_API_KEY!,
+    process.env.PINATA_API_SECRET!
+  );
   await pinata.testAuthentication();
 }
 setup();
