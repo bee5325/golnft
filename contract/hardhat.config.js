@@ -2,6 +2,7 @@ require("@nomiclabs/hardhat-waffle");
 require("./tasks/faucet");
 require("./tasks/tsetup");
 require("dotenv").config();
+require("@nomiclabs/hardhat-etherscan");
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -24,6 +25,11 @@ module.exports = {
     arbitrum: {
       url: process.env.ALCHEMY_ARBITRUM_API_URL,
       accounts: [`0x${process.env.PRIVATE_KEY}`],
+    },
+  },
+  etherscan: {
+    apiKey: {
+      arbitrumOne: process.env.ARBISCAN_API_KEY,
     },
   },
 };
