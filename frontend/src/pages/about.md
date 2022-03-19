@@ -26,6 +26,8 @@ to contact me.
 
 You can check your minted boards under page [mint](/mint).
 
+For detailed instruction of how to mint, check out the [help](/help) page.
+
 ## Why Arbitrum
 
 Well the honest answer is because it is cheap. I just can't afford the high gas fee required

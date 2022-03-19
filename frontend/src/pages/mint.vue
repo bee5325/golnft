@@ -40,7 +40,7 @@ watchEffect(async () => {
       type: "error",
       msg: `
         Error getting latest price for minting. Make sure you are connected to the correct network (Arbitrum).\n
-        Contact admin if the issue persists.`,
+        Click <a href="help">here</a> for instructions.`,
     };
   } else {
     clearNotification();
@@ -247,7 +247,14 @@ onMounted(() => {
       :msg="notification.msg"
       @clearNotification="clearNotification"
     />
-    <h1 class="uppercase">Mint</h1>
+    <h1 class="uppercase">
+      Mint
+      <router-link to="help">
+        <carbon-help
+          class="w-6 align-top text-green-800 opacity-50 ml-2 hover:text-green-400 cursor-pointer"
+        ></carbon-help>
+      </router-link>
+    </h1>
     <button
       v-if="!account"
       class="btn"

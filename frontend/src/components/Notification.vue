@@ -15,13 +15,15 @@ defineProps({
   >
     <div
       v-if="type !== 'none'"
-      class="p-5 w-11/12 mt-5 flex max-w-4xl justify-between absolute top-0 left-1/2 transform -translate-x-1/2"
+      class="p-5 w-11/12 mt-5 flex max-w-4xl justify-between z-10 fixed top-0 left-1/2 transform -translate-x-1/2 bg-gray-50 shadow-md rounded"
       :class="{
-        'bg-red-200': type === 'error',
-        'bg-orange-200': type === 'info',
+        'text-red-800': type === 'error',
+        'text-green-800': type === 'ainfo',
       }"
     >
-      <p class="basis-11/12 m-auto break-all whitespace-pre-line">{{ msg }}</p>
+      <p class="basis-11/12 m-auto break-words whitespace-pre-line">
+        <span v-html="msg" />
+      </p>
       <carbon-close
         @click="$emit('clearNotification')"
         class="cursor-pointer"
@@ -29,3 +31,9 @@ defineProps({
     </div>
   </Transition>
 </template>
+
+<style lang="postcss" scoped>
+:deep(a) {
+  @apply text-green-500 opacity-75 font-500 underline hover:opacity-100 hover:text-green-700;
+}
+</style>
