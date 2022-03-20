@@ -1,6 +1,6 @@
 <template>
   <main
-    class="p-0 text-center text-gray-700 dark:text-gray-200 overflow-hidden"
+    class="p-0 text-center text-gray-700 overflow-hidden"
   >
     <Header />
     <router-view v-slot="{ Component }">

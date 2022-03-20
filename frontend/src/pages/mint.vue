@@ -292,7 +292,7 @@ onMounted(() => {
           class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2"
         />
       </button>
-      <p class="font-bold break-words px-3">{{ initId }}</p>
+      <p class="font-bold break-words px-3">ID: {{ initId }}</p>
       <div
         class="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center md:justify-items-stretch"
       >
