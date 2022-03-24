@@ -4,11 +4,13 @@
   "description": "",
   "scripts": {
     "postinstall": "(cd frontend && npm install); (cd server && npm install); (cd contract && npm install)",
-    "dev": "(cd frontend && npm run dev) & (cd server && npm run dev) & (cd contract && npx hardhat node) &"
+    "dev": "concurrently -n \"frontend,server,contract\" -c \"green,blue,magenta\" \"cd frontend && npm run dev\" \"cd server && npm run dev\" \"cd contract && npx hardhat node\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {},
+  "devDependencies": {
+    "concurrently": "^7.0.0"
+  },
   "dependencies": {}
 }
