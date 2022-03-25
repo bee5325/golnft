@@ -34,7 +34,7 @@ jobs:
           node-version: 16.x
 
       - name: Install dependency
-        run: npm ci
+        run: pnpm install
 
       - name: Build static pages
         run: npm run build
