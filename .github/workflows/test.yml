@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16.x
+          cache: npm
+          cache-dependency-path: server/package-lock.json
 
       - name: Install dependency
         run: npm ci
@@ -35,6 +37,8 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16.x
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.json
 
       - name: Install dependency
         run: pnpm install
@@ -53,6 +57,8 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16.x
+          cache: npm
+          cache-dependency-path: contract/pnpm-lock.json
 
       - name: Install dependency
         run: npm ci
