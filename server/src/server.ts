@@ -7,7 +7,6 @@ import { Collection, Minted, TokenMeta } from "./database";
 import { genGIF, genMeta } from "./genGIF";
 import nodemailer from "nodemailer";
 
-const port = process.env.PORT || 3000;
 let contract: ethers.Contract;
 
 const app = express();
@@ -29,14 +28,18 @@ app.put("/board", async (req, res) => {
     let { meta, signature } = pending;
 
     // double check if state exists
-    if (
-      !(await contract.initStateExists(
-        rows,
-        ethers.BigNumber.from(`0x${meta.initState}`)
-      ))
-    ) {
-      res.send({ initState: meta.initState, meta, signature });
-      return;
+    try {
+      if (
+        !(await contract.initStateExists(
+          rows,
+          ethers.BigNumber.from(`0x${meta.initState}`)
+        ))
+      ) {
+        res.send({ initState: meta.initState, meta, signature });
+        return;
+      }
+    } catch (err) {
+      console.log("Error checking if init state exists");
     }
   }
 
@@ -74,7 +77,7 @@ app.put("/board", async (req, res) => {
     initState: initStateStr,
     rows: initStateStr.length / 4,
     image: gifUrl,
-    externalUrl: `${process.env.SITE_URL}/${initState}`,
+    externalUrl: `${config.SITE_URL}/${initState}`,
     attributes: [
       { trait_types: "Step count", value: stepCount },
       { trait_types: "Loop", value: loop ? "Yes" : "No" },
@@ -116,11 +119,27 @@ app.get("/minted/:row", async (req, res) => {
 });
 
 // setup
-for (let key of ["PRIVATE_KEY", "CONTRACT_ADDRESS"]) {
-  if (!process.env[key]) {
-    throw new Error(`${key} is not set in environment variables`);
+const KEYS = [
+  "PRIVATE_KEY",
+  "CONTRACT_ADDRESS",
+  "NETWORK",
+  "SITE_URL",
+  "MAIL_PROVIDER",
+  "MAIL_PASS",
+  "MAIL_USER",
+];
+let config: Record<string, any> = {};
+for (let key of KEYS) {
+  let envKey = process.env.NODE_ENV === "development" ? `${key}_TEST` : key;
+
+  if (!process.env[envKey]) {
+    throw new Error(`${envKey} is not set in environment variables`);
   }
+
+  config[key] = process.env[envKey];
 }
+
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Express is listening at http://localhost:${port}`);
 
@@ -182,17 +201,8 @@ app.listen(port, () => {
     },
   ];
   // update db for pending transactions
-  let network =
-    process.env.NODE_ENV === "development"
-      ? process.env.NETWORK_TEST
-      : process.env.NETWORK;
-  if (!network) {
-    throw new Error(
-      "NETOWRK / NETWORK_TEST is not set in environment variables"
-    );
-  }
-  let provider = ethers.getDefaultProvider(network);
-  contract = new ethers.Contract(process.env.CONTRACT_ADDRESS!, abi, provider);
+  let provider = ethers.getDefaultProvider(config.NETWORK);
+  contract = new ethers.Contract(config.CONTRACT_ADDRESS, abi, provider);
   contract.on("Minted", dbUpdatePending);
 });
 
@@ -200,15 +210,15 @@ app.post("/feedback", (req, res) => {
   let { email, feedback } = req.body;
   try {
     let transporter = nodemailer.createTransport({
-      service: process.env.MAIL_PROVIDER,
+      service: config.MAIL_PROVIDER,
       auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        user: config.MAIL_USER,
+        pass: config.MAIL_PASS,
       },
     });
     transporter.sendMail({
-      from: process.env.MAIL_USER,
-      to: process.env.MAIL_USER,
+      from: config.MAIL_USER,
+      to: config.MAIL_USER,
       subject: "You got a new feedback",
       text: `Feedback from ${email}:\n\n${feedback}`,
     });
@@ -228,7 +238,7 @@ async function getSignature(
   initState: ethers.BigNumber,
   address: string
 ) {
-  let signer = new ethers.Wallet(process.env.PRIVATE_KEY!);
+  let signer = new ethers.Wallet(config.PRIVATE_KEY);
   let abiCoder = ethers.utils.defaultAbiCoder;
 
   return await signer.signMessage(

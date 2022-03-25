@@ -226,7 +226,7 @@ async function uploadIPFS(filePath: string) {
     let res = await pinata.pinFileToIPFS(file);
     return `https://ipfs.io/ipfs/${res.IpfsHash}`;
   } catch (err) {
-    console.log("Error:", err);
+    console.log("Error upload to IPFS:", err);
     return "";
   }
 }
