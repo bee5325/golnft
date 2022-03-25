@@ -1,9 +1,13 @@
+<script lang="ts">
+const ARBITRUM_ONE = "0xa4b1";
+</script>
+
 <script setup lang="ts">
-import { Ref, ComputedRef } from "vue";
+import type { Ref } from "vue";
 import { useContract } from "../composables/contract";
 import axios from "axios";
 
-let account: Ref<string> = ref("");
+let account: Ref<string | undefined> = ref();
 let connect: () => Promise<void>;
 let payToMint: (
   rows: number,
@@ -12,50 +16,83 @@ let payToMint: (
   signature: string
 ) => Promise<any>;
 let tokenIdOf: (rows: number, initState: string) => Promise<number>;
-let _price: ComputedRef<Promise<string>>;
 let walletDetected = ref(false);
+let price = ref<string>("?");
+let chainId = ref("0");
+let switchChain: (chainId: string) => Promise<void>;
 
 // Ignored for SSG
 if (typeof useContract !== "undefined") {
-  ({ account, connect, price: _price, payToMint, tokenIdOf } = useContract());
+  ({ account, connect, chainId, switchChain, price, payToMint, tokenIdOf } =
+    useContract());
   walletDetected.value = true;
 }
 
-function truncate(account: string) {
+function truncate(account: string | undefined) {
+  if (!account) {
+    return "";
+  }
   return `${account.substring(0, 7)}...${account.substring(
     account.length - 5
   )}`;
 }
 
-// Auto update price when connected
-let price = ref<string>("?");
-watchEffect(async () => {
-  if (!_price || !account.value) {
+// notification
+type Notification = {
+  msg: string;
+  type: "none" | "err_arbitrum" | "err_price" | "err_general" | "info_general";
+};
+
+let notification = ref<Notification>({ msg: "", type: "none" });
+let notificationType = computed(() =>
+  notification.value.type.startsWith("err_")
+    ? "error"
+    : notification.value.type.startsWith("info_")
+    ? "info"
+    : "none"
+);
+function clearNotification() {
+  notification.value = {
+    msg: "",
+    type: "none",
+  };
+}
+
+// Detect network changes and auto update price
+watchEffect(() => {
+  // make sure wallet connected
+  if (!account.value) {
     return;
   }
 
-  price.value = await _price.value;
-  if (price.value === "?") {
+  // make sure network is arbitrum
+  if (chainId.value !== ARBITRUM_ONE) {
     notification.value = {
-      type: "error",
-      msg: `
-        Error getting latest price for minting. Make sure you are connected to the correct network (Arbitrum).\n
-        Click <a href="help">here</a> for instructions.`,
+      msg: "",
+      type: "err_arbitrum",
     };
-  } else {
-    clearNotification();
+    return;
   }
+
+  // get price (add small delay to prevent flickering)
+  setTimeout(() => {
+    if (price.value === "?") {
+      notification.value = {
+        msg: "",
+        type: "err_price",
+      };
+      return;
+    }
+  }, 1000);
+
+  clearNotification();
 });
 
-// notification
-interface Notification {
-  msg: string;
-  type: "none" | "error" | "info";
-}
-let notification = ref<Notification>({ msg: "", type: "none" });
-function clearNotification() {
-  notification.value = { msg: "", type: "none" };
-}
+// Smooth transition when page loaded
+let loading = ref(true);
+onMounted(() => {
+  setTimeout(() => (loading.value = false), 1000);
+});
 
 // show minted count
 let initId = ref<string>("????????????");
@@ -132,7 +169,7 @@ async function mint() {
     );
     notification.value = {
       msg: `Transaction confirmed!\nTransaction ID: ${res.transactionHash}`,
-      type: "info",
+      type: "info_general",
     };
 
     // display
@@ -147,7 +184,7 @@ async function mint() {
             ? err.data.message
             : "Unexpected error happened. Please reset your wallet account and try again";
           notification.value = {
-            type: "error",
+            type: "err_general",
             msg: errMsg.replace(
               "Error: VM Exception while processing transaction: ",
               ""
@@ -157,14 +194,14 @@ async function mint() {
         }
         case 4001: {
           notification.value = {
-            type: "error",
+            type: "err_general",
             msg: "Transaction rejected by user",
           };
           break;
         }
         default:
           notification.value = {
-            type: "error",
+            type: "err_general",
             msg: "Unexpected error happend. Please try again later.",
           };
           console.log(JSON.stringify(err));
@@ -172,17 +209,17 @@ async function mint() {
       }
     } else if (err.response?.status === 400 && err.response?.data?.msg) {
       notification.value = {
-        type: "error",
+        type: "err_general",
         msg: err.response.data.msg,
       };
     } else if (err.message === "Network Error") {
       notification.value = {
-        type: "error",
+        type: "err_general",
         msg: "Network error. Please try again later",
       };
     } else {
       notification.value = {
-        type: "error",
+        type: "err_general",
         msg: "Unexpected error happened. Please try again later",
       };
       console.trace(err);
@@ -233,7 +270,7 @@ onMounted(() => {
   // for no wallet
   if (!walletDetected.value) {
     notification.value = {
-      type: "error",
+      type: "err_general",
       msg: "No wallet detected. Please install a wallet to continue",
     };
   }
@@ -243,71 +280,101 @@ onMounted(() => {
 <template>
   <div>
     <Notification
-      :type="notification.type"
+      :type="notificationType"
       :msg="notification.msg"
       @clearNotification="clearNotification"
-    />
+    >
+      <span v-if="notification.type === 'err_arbitrum'">
+        You are not connected to Arbitrum One.<br />
+        Click <a href="#" @click.prevent="switchChain(ARBITRUM_ONE)">here</a> to
+        connect.
+      </span>
+      <span v-else-if="notification.type === 'err_price'">
+        Error getting latest price for minting. Make sure you are connected to
+        Arbitrum network.<br />
+        Click <router-link to="help">here</router-link> for instructions.
+      </span>
+    </Notification>
+
     <h1 class="uppercase">
       Mint
       <router-link to="help">
         <carbon-help
-          class="w-6 align-top text-green-800 opacity-50 ml-2 hover:text-green-400 cursor-pointer"
+          class="w-6 absolute text-green-800 opacity-50 ml-2 hover:text-green-400 cursor-pointer"
         ></carbon-help>
       </router-link>
     </h1>
-    <button
-      v-if="!account"
-      class="btn"
-      :disabled="connecting || !walletDetected"
-      @click="connectWallet"
+
+    <transition-group
+      mode="out-in"
+      enter-from-class="transform scale-y-0 opacity-0"
+      leave-to-class="transform scale-y-0 opacity-0"
+      move-class="transition-transform duration-300 ease-out"
+      enter-active-class="transition-all origin-top duration-500"
+      leave-active-class="transition-all origin-top duration-500 absolute left-1/2 -translate-x-1/2"
     >
-      Connect your wallet
-    </button>
-    <template v-else>
-      <p>
-        Account <span class="font-bold">{{ truncate(account) }}</span>
-      </p>
-      <div class="m-auto">
-        <label>Number of rows (3 - 16)</label>
-        <input
-          type="number"
-          v-model="rows"
-          class="border-gray-300 border-1 border-solid px-2 py-1 m-2"
-          min="3"
-          max="16"
-        />
-      </div>
-      <p>
-        (<span class="font-bold">{{ mintedCount }}</span> of
-        {{ combinations }} minted)
-      </p>
+      <eos-icons-loading
+        v-if="loading"
+        key="loading"
+        class="text-green-900 w-10 h-10"
+      />
       <button
-        class="btn relative"
-        :disabled="minting || price === '?'"
-        @click="mint"
+        v-else-if="account === ''"
+        key="not-connect"
+        class="btn"
+        :disabled="connecting || !walletDetected"
+        @click="connectWallet"
       >
-        Mint for {{ price }} ETH
-        <eos-icons-loading
-          v-if="minting"
-          class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2"
-        />
+        Connect your wallet
       </button>
-      <p class="font-bold break-words px-3">ID: {{ initId }}</p>
-      <div
-        class="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center md:justify-items-stretch"
-      >
-        <GOLBoard
-          class="md:col-start-2"
-          :width="500"
-          :height="500"
-          :toggle="false"
-          :initId="initId"
-          :autorun="true"
-        />
-        <GOLInfo v-if="meta" :meta="meta" :loading="false" />
+      <div v-else-if="account !== undefined" key="connected">
+        <p>
+          Account <span class="font-bold">{{ truncate(account) }}</span>
+        </p>
+        <div class="m-auto">
+          <label>Number of rows (3 - 16)</label>
+          <input
+            type="number"
+            v-model="rows"
+            class="border-gray-300 border-1 border-solid px-2 py-1 m-2"
+            min="3"
+            max="16"
+          />
+        </div>
+        <p>
+          (<span class="font-bold">{{ mintedCount }}</span> of
+          {{ combinations }} minted)
+        </p>
+        <button
+          class="btn relative"
+          :disabled="minting || price === '?'"
+          @click="mint"
+        >
+          Mint for {{ price }} ETH
+          <eos-icons-loading
+            v-if="minting"
+            class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2"
+          />
+        </button>
+        <p class="font-bold break-words px-3">ID: {{ initId }}</p>
+        <div
+          class="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center md:justify-items-stretch"
+        >
+          <GOLBoard
+            class="md:col-start-2"
+            :width="500"
+            :height="500"
+            :toggle="false"
+            :initId="initId"
+            :autorun="true"
+          />
+          <GOLInfo v-if="meta" :meta="meta" :loading="false" />
+        </div>
       </div>
-    </template>
+    </transition-group>
+
     <hr class="m-4" />
+
     <div class="min-h-screen">
       <h1 class="font-bold text-green-600 text-2xl uppercase m-2">
         My collections ({{ collections.length }})

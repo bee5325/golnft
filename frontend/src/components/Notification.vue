@@ -22,7 +22,8 @@ defineProps({
       }"
     >
       <p class="basis-11/12 m-auto break-words whitespace-pre-line">
-        <span v-html="msg" />
+        <span v-if="msg">{{ msg }}</span>
+        <slot v-else />
       </p>
       <carbon-close
         @click="$emit('clearNotification')"
