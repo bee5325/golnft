@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 let owner, addr1, addr2;
-const MIN_PAYMENT = Math.pow(10, 14); // 0.0001 ether
+const MIN_PAYMENT = Math.pow(10, 15); // 0.001 ether
 
 // helper functions
 async function getSignature(rows, initState, address) {

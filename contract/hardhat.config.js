@@ -4,6 +4,27 @@ require("./tasks/tsetup");
 require("dotenv").config();
 require("@nomiclabs/hardhat-etherscan");
 
+let networks = {};
+let etherscan = {};
+
+if (process.env.PRIVATE_KEY) {
+  networks = {
+    arbRinkeby: {
+      url: process.env.ALCHEMY_ARBRINKEBY_API_URL,
+      accounts: [`0x${process.env.PRIVATE_KEY}`],
+    },
+    arbitrum: {
+      url: process.env.ALCHEMY_ARBITRUM_API_URL,
+      accounts: [`0x${process.env.PRIVATE_KEY}`],
+    },
+  };
+  etherscan = {
+    apiKey: {
+      arbitrumOne: process.env.ARBISCAN_API_KEY,
+    },
+  };
+}
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -17,19 +38,6 @@ module.exports = {
       },
     },
   },
-  networks: {
-    arbRinkeby: {
-      url: process.env.ALCHEMY_ARBRINKEBY_API_URL,
-      accounts: [`0x${process.env.PRIVATE_KEY}`],
-    },
-    arbitrum: {
-      url: process.env.ALCHEMY_ARBITRUM_API_URL,
-      accounts: [`0x${process.env.PRIVATE_KEY}`],
-    },
-  },
-  etherscan: {
-    apiKey: {
-      arbitrumOne: process.env.ARBISCAN_API_KEY,
-    },
-  },
+  networks,
+  etherscan,
 };
