@@ -118,7 +118,7 @@ if (typeof window !== "undefined" && window.ethereum) {
     let chainId = ref("0");
     let provider = new ethers.providers.Web3Provider(window.ethereum);
     let signer = provider.getSigner();
-    let contractAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"; // import.meta.env.VITE_CONTRACT_ADDRESS as string;
+    let contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS as string;
     let contract = ref(
       new ethers.Contract(contractAddress, contractAbi, signer)
     );
