@@ -6,20 +6,14 @@ on:
       - master
 
 jobs:
-  checkout:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
   build-server:
     runs-on: ubuntu-latest
-    needs: checkout
     defaults:
       run:
         working-directory: server
 
     steps:
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           node-version: 16.x
@@ -29,12 +23,12 @@ jobs:
 
   build-frontend:
     runs-on: ubuntu-latest
-    needs: checkout
     defaults:
       run:
         working-directory: frontend
 
     steps:
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           node-version: 16.x
@@ -47,12 +41,12 @@ jobs:
 
   build-contract:
     runs-on: ubuntu-latest
-    needs: checkout
     defaults:
       run:
         working-directory: contract
 
     steps:
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           node-version: 16.x
