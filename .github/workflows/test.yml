@@ -70,8 +70,8 @@ jobs:
     steps:
       - uses: appleboy/ssh-action@master
         with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_KEY }}
-        port: ${{ secrets.PORT }}
-        scripts: cd ${{ secrets.PATH }} && docker compose up --build -d
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          scripts: cd ${{ secrets.PATH }} && docker compose up --build -d
