@@ -296,87 +296,92 @@ onMounted(() => {
       </span>
     </Notification>
 
-    <h1 class="uppercase">
-      Mint
-      <router-link to="help">
-        <carbon-help
-          class="w-6 absolute text-green-800 opacity-50 ml-2 hover:text-green-400 cursor-pointer"
-        ></carbon-help>
-      </router-link>
-    </h1>
+    <div id="mint">
+      <h1 class="uppercase">
+        Mint
+        <router-link to="help">
+          <carbon-help
+            class="w-6 absolute text-green-800 opacity-50 ml-2 hover:text-green-400 cursor-pointer"
+          ></carbon-help>
+        </router-link>
+      </h1>
 
-    <transition-group
-      mode="out-in"
-      enter-from-class="transform scale-y-0 opacity-0"
-      leave-to-class="transform scale-y-0 opacity-0"
-      move-class="transition-transform duration-300 ease-out"
-      enter-active-class="transition-all origin-top duration-500"
-      leave-active-class="transition-all origin-top duration-500 absolute left-1/2 -translate-x-1/2"
-    >
-      <eos-icons-loading
-        v-if="loading"
-        key="loading"
-        class="text-green-900 w-10 h-10"
-      />
-      <button
-        v-else-if="account === ''"
-        key="not-connect"
-        class="btn"
-        :disabled="connecting || !walletDetected"
-        @click="connectWallet"
+      <transition-group
+        mode="out-in"
+        enter-from-class="transform scale-y-0 opacity-0"
+        leave-to-class="transform scale-y-0 opacity-0"
+        move-class="transition-transform duration-300 ease-out"
+        enter-active-class="transition-all origin-top duration-500"
+        leave-active-class="transition-all origin-top duration-500 absolute left-1/2 -translate-x-1/2"
       >
-        Connect your wallet
-      </button>
-      <div v-else-if="account !== undefined" key="connected">
-        <p>
-          Account <span class="font-bold">{{ truncate(account) }}</span>
-        </p>
-        <div class="m-auto">
-          <label>Number of rows (3 - 16)</label>
-          <input
-            type="number"
-            v-model="rows"
-            class="border-gray-300 border-1 border-solid px-2 py-1 m-2"
-            min="3"
-            max="16"
-          />
-        </div>
-        <p>
-          (<span class="font-bold">{{ mintedCount }}</span> of
-          {{ combinations }} minted)
-        </p>
+        <eos-icons-loading
+          v-if="loading"
+          key="loading"
+          class="text-green-900 w-10 h-10"
+        />
         <button
-          class="btn relative"
-          :disabled="minting || price === '?'"
-          @click="mint"
+          v-else-if="account === ''"
+          key="not-connect"
+          class="btn"
+          :disabled="connecting || !walletDetected"
+          @click="connectWallet"
         >
-          Mint for {{ price }} ETH
-          <eos-icons-loading
-            v-if="minting"
-            class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2"
-          />
+          Connect your wallet
         </button>
-        <p class="font-bold break-words px-3">ID: {{ initId }}</p>
-        <div
-          class="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center md:justify-items-stretch"
-        >
-          <GOLBoard
-            class="md:col-start-2"
-            :width="500"
-            :height="500"
-            :toggle="false"
-            :initId="initId"
-            :autorun="true"
-          />
-          <GOLInfo v-if="meta" :meta="meta" :loading="false" />
+        <div v-else-if="account !== undefined" key="connected">
+          <p>
+            Account <span class="font-bold">{{ truncate(account) }}</span>
+          </p>
+          <div class="m-auto">
+            <label>Number of rows (3 - 16)</label>
+            <input
+              type="number"
+              v-model="rows"
+              class="border-gray-300 border-1 border-solid px-2 py-1 m-2"
+              min="3"
+              max="16"
+            />
+          </div>
+          <p>
+            (<span class="font-bold">{{ mintedCount }}</span> of
+            {{ combinations }} minted)
+          </p>
+          <button
+            class="btn relative"
+            :disabled="minting || price === '?'"
+            @click="mint"
+          >
+            Mint for {{ price }} ETH
+            <eos-icons-loading
+              v-if="minting"
+              class="absolute left-full top-1/2 transform -translate-y-1/2 text-green-900 w-6 h-6 ml-2"
+            />
+          </button>
+          <p class="font-bold break-words px-3">ID: {{ initId }}</p>
+          <div
+            class="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center md:justify-items-stretch"
+          >
+            <GOLBoard
+              class="md:col-start-2"
+              :width="500"
+              :height="500"
+              :toggle="false"
+              :initId="initId"
+              :autorun="true"
+            />
+            <GOLInfo v-if="meta" :meta="meta" :loading="false" />
+          </div>
         </div>
-      </div>
-    </transition-group>
+      </transition-group>
+    </div>
 
     <hr class="m-4" />
 
     <div class="min-h-screen">
-      <h1 class="font-bold text-green-600 text-2xl uppercase m-2">
+      <h1
+        id="collections"
+        class="font-bold text-green-600 text-2xl uppercase m-2"
+      >
         My collections ({{ collections.length }})
         <carbon-renew
           class="text-green-900 w-5 align-middle ml-2 hover:text-green-400 cursor-pointer"
