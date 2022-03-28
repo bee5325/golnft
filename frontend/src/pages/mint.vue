@@ -301,7 +301,7 @@ onMounted(() => {
         Mint
         <router-link to="help">
           <carbon-help
-            class="w-6 absolute text-green-800 opacity-50 ml-2 hover:text-green-400 cursor-pointer"
+            class="w-6 absolute text-green-800 opacity-50 ml-2 hover:text-green-400 transition-colors cursor-pointer"
           ></carbon-help>
         </router-link>
       </h1>

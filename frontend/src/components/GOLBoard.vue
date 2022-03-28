@@ -319,32 +319,37 @@ watch([() => props.forceLoop, restart], ([newLoop, newRestart], [oldLoop]) => {
       @click="toggleCell"
     >
     </canvas>
-    <div v-if="controls">
-      <button class="btn" :disabled="running || !revealed" @click="step">
-        Step
-      </button>
-      <button
-        class="btn"
+    <div v-if="controls" class="mt-3 mx-auto flex w-1/2 justify-between">
+      <carbon-skip-forward-filled
+        class="text-gray-900 text-2xl mx-2 cursor-pointer hover:text-gray-600 transition-colors"
+        :class="{ disabled: running || !revealed }"
+        @click="step"
+      />
+      <carbon-play-filled-alt
+        class="text-gray-900 text-2xl mx-2 cursor-pointer hover:text-gray-600 transition-colors"
         v-if="!running"
+        :class="{ disabled: !revealed }"
         @click="run(true)"
-        :disabled="!revealed"
-      >
-        Run
-      </button>
-      <button class="btn bg-red-500" v-else @click="run(false)">Stop</button>
-      <button
-        class="btn bg-red-500"
-        :disabled="running || !revealed"
+      />
+      <carbon-pause-filled
+        class="text-gray-900 text-2xl mx-2 cursor-pointer hover:text-gray-600 transition-colors"
+        v-else
+        @click="run(false)"
+      />
+      <carbon-restart
+        class="text-red-500 text-2xl mx-2 cursor-pointer hover:text-red-300 transition-colors"
+        :class="{ disabled: running || !revealed }"
         @click="reset"
-      >
-        Reset
-      </button>
+      />
     </div>
   </div>
 </template>
 
-<style>
+<style lang="postcss">
 .aspect-square {
   aspect-ratio: 1;
+}
+.disabled {
+  @apply !text-gray-300 pointer-events-none;
 }
 </style>

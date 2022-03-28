@@ -8,6 +8,7 @@ let stepCount = ref(0);
 let isLoop = ref<"No" | "Yes">("No");
 let running = ref(false);
 
+maxRows.value = 100;
 function randomize() {
   let rows = Array(maxRows.value)
     .fill(0)
@@ -23,6 +24,7 @@ function randomize() {
       return row.toString(16).padStart(4, "0");
     });
   initIdRaw.value = rows.join("");
+  console.log(initIdRaw.value);
   stepCount.value = 0;
 }
 
@@ -55,21 +57,29 @@ watchEffect(() => {
 
 <template>
   <div>
+    <GOLBackground />
     <h1 class="uppercase">Conway's Game of Life</h1>
     <Intro class="intro pb-0 mb-10" />
     <h1 class="uppercase">
       Explore
       <a href="#" @click.prevent="showHelp = !showHelp">
         <carbon-help
-          class="w-6 absolute text-green-800 opacity-50 ml-2 hover:text-green-400 cursor-pointer"
+          class="w-6 absolute text-green-800 opacity-50 ml-2 hover:text-green-400 transition-colors cursor-pointer"
         ></carbon-help
       ></a>
     </h1>
-    <ExploreHelp
-      v-show="showHelp"
-      @close-help="showHelp = false"
-      class="absolute left-1/2 w-11/12 max-w-2xl transform -translate-x-1/2"
-    />
+    <transition
+      enter-from-class="scale-y-0 opacity-0"
+      leave-to-class="scale-y-0 opacity-0"
+      enter-active-class="transition-all origin-top duration-400"
+      leave-active-class="transition-all origin-top duration-400"
+    >
+      <ExploreHelp
+        v-show="showHelp"
+        @close-help="showHelp = false"
+        class="absolute left-1/2 w-11/12 max-w-2xl transform -translate-x-1/2"
+      />
+    </transition>
     <div class="w-11/12 m-auto grid grid-cols-1 md:grid-cols-3 items-center">
       <GOLBoard
         class="md:col-start-2"
@@ -110,7 +120,7 @@ watchEffect(() => {
         <button class="btn" @click="clear" :disabled="running">Clear</button>
       </div>
     </div>
-    <div class="p-10 w-full bg-green-700 text-white mt-5 mb-200px">
+    <div class="p-10 w-full bg-green-700 text-white mt-5 pb-80px">
       <p class="font-bold text-2xl pb-5">Ready to get one for yourself?</p>
       <router-link
         class="btn hover:bg-green-200 hover:transform hover:scale-125 transition-transform py-3 px-10 bg-white text-green-900"

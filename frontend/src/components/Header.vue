@@ -6,16 +6,34 @@
       >Conway's Game of Life NFT</span
     >
 
-    <router-link class="icon-btn mx-2 ml-auto md:ml-0" to="/" title="Home">
+    <router-link
+      class="icon-btn mx-2 hover:text-green-50 ml-auto md:ml-0"
+      to="/"
+      title="Home"
+    >
       Home
     </router-link>
 
-    <router-link class="icon-btn mx-2" to="/mint" title="Mint">
+    <router-link
+      class="icon-btn mx-2 hover:text-green-50"
+      to="/mint"
+      title="Mint"
+    >
       Mint
     </router-link>
 
-    <router-link class="icon-btn mx-2" to="/about" title="About">
+    <router-link
+      class="icon-btn mx-2 hover:text-green-50"
+      to="/about"
+      title="About"
+    >
       About
     </router-link>
   </nav>
 </template>
+
+<style lang="postcss">
+.router-link-active {
+  @apply border-b-2 border-green-50 border-solid;
+}
+</style>
