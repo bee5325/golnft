@@ -5,12 +5,14 @@ services:
     container_name: gol_server_1
     build: ./server
     env_file: ./server/.env
+    restart: always
     networks:
       - global-frontend-network
   frontend:
     image: gol/frontend
     container_name: gol_frontend_1
     build: ./frontend
+    restart: always
     networks:
       - global-frontend-network
 

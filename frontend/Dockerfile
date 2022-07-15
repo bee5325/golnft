@@ -3,9 +3,10 @@ FROM node:lts-alpine as build-stage
 WORKDIR /app
 
 # npm packages
+RUN npm install -g pnpm
 COPY package*.json ./
-RUN npm config set update-notifier false
-RUN npm install
+COPY pnpm-lock.yaml ./
+RUN pnpm install -P --frozen-lockfile
 
 # Actual codes
 COPY public ./public

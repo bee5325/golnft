@@ -8,8 +8,9 @@ ENV TZ=Asia/Kuala_Lumpur
 # npm packages
 COPY package*.json ./
 RUN npm config set update-notifier false
-RUN npm install
+RUN npm ci
 
 # Actual codes
 COPY . /golnft/
+RUN npm run build
 CMD ["npm", "start"]
